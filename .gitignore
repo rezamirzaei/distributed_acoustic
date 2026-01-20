@@ -1,0 +1,70 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Large data files
+*.h5
+*.hdf5
+*.mat
+*.sac
+*.mseed
+*.segy
+*.sgy
+notebooks/data/*.npy
+data/real/*.h5
+data/real/*.hdf5
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+git_status.txt
+git_reset.log
+commit_result.txt
+sync_result.txt
+validation_result.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# uv lock file (optional - you may want to keep this)
+# uv.lock
