@@ -18,8 +18,9 @@ from .data_loader import DASDataLoader, download_sample_data
 from .datasets import dataset_path, ensure_real_datasets
 from .preprocessing import DASPreprocessor
 from .event_detection import EventDetector
-from .visualization import DASVisualizer
-from .monitoring import CO2Monitor
+from .monitoring import CO2Monitor, MonitoringResult
+from .optimization import ADMMOptimizer, ConsensusADMM
+from .federated import FederatedSimulation, FederatedDASNode
 
 __version__ = "0.1.0"
 __author__ = "DAS Research Team"
@@ -28,8 +29,12 @@ __all__ = [
     "DASDataLoader",
     "DASPreprocessor",
     "EventDetector",
-    "DASVisualizer",
     "CO2Monitor",
+    "MonitoringResult",
+    "ADMMOptimizer",
+    "ConsensusADMM",
+    "FederatedSimulation",
+    "FederatedDASNode",
     "download_sample_data",
     "dataset_path",
     "ensure_real_datasets",
