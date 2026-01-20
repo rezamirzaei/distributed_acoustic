@@ -122,6 +122,103 @@ class ADMMOptimizer:
         """
         return np.sign(v) * np.maximum(np.abs(v) - kappa, 0.0)
 
+    def tv1d_denoise(self, y: np.ndarray, lambd: float) -> np.ndarray:
+        """
+        Solve the 1D Total Variation Denoising problem using ADMM.
+
+        Problem: min_x 0.5 * ||y - x||_2^2 + lambd * ||Dx||_1
+        where D is the 1D difference operator.
+
+        This implementation uses a direct Thomas algorithm (tridiagonal solver) for the x-update,
+        making it O(N) complexity per iteration.
+
+        Args:
+            y: Input signal (1D array).
+            lambd: Regularization parameter.
+
+        Returns:
+            Denoised signal x.
+        """
+        y = np.asarray(y, dtype=np.float64)
+        n = len(y)
+        rho = self.rho
+
+        x = y.copy()
+        z = np.zeros(n - 1)
+        u = np.zeros(n - 1)
+
+        # Precompute tridiagonal matrix diagonals for (I + rho D^T D)
+        # The system is (I + rho D^T D) x = ...
+        # D is (N-1 x N). D^T D is (N x N) tridiagonal.
+        # Main diag: 1 + 2*rho (internal), 1 + rho (boundaries)
+        # Off diag: -rho
+
+        a = -rho * np.ones(n - 1)  # lower
+        b = (1 + 2 * rho) * np.ones(n)  # main
+        b[0] = 1 + rho
+        b[-1] = 1 + rho
+        c = -rho * np.ones(n - 1)  # upper
+
+        # Helper: Thomas algorithm for tridiagonal solve
+        def thomas_solve(rhs_vec):
+            # Forward elimination
+            c_prime = np.zeros(n - 1)
+            d_prime = np.zeros(n)
+
+            c_prime[0] = c[0] / b[0]
+            d_prime[0] = rhs_vec[0] / b[0]
+
+            for i in range(1, n - 1):
+                temp = b[i] - a[i-1] * c_prime[i-1]
+                c_prime[i] = c[i] / temp
+                d_prime[i] = (rhs_vec[i] - a[i-1] * d_prime[i-1]) / temp
+
+            # Last row separate (no c_prime)
+            d_prime[n-1] = (rhs_vec[n-1] - a[n-2] * d_prime[n-2]) / (b[n-1] - a[n-2] * c_prime[n-2])
+
+            # Back substitution
+            x_sol = np.zeros(n)
+            x_sol[-1] = d_prime[-1]
+            for i in range(n - 2, -1, -1):
+                x_sol[i] = d_prime[i] - c_prime[i] * x_sol[i+1]
+
+            return x_sol
+
+        for _ in range(self.max_iter):
+            # --- x-update ---
+            # (I + rho D^T D) x = y + rho D^T (z - u)
+            # Calculate rhs = y + rho D^T (z - u)
+
+            d_aux = z - u # size N-1
+            # D^T d_aux maps (N-1) -> (N)
+            # (D^T v)_i = -v_i if i=0
+            #           = v_{i-1} - v_i if 0 < i < N-1
+            #           = v_{N-2} if i = N-1
+
+            Dt_term = np.zeros(n)
+            Dt_term[0] = -d_aux[0]
+            Dt_term[1:-1] = d_aux[:-1] - d_aux[1:]
+            Dt_term[-1] = d_aux[-1]
+
+            rhs = y + rho * Dt_term
+            x = thomas_solve(rhs)
+
+            # --- z-update ---
+            # z = soft_threshold(Dx + u, lambd/rho)
+            Dx = np.diff(x)
+            v = Dx + u
+            kappa = lambd / rho
+            z = np.sign(v) * np.maximum(np.abs(v) - kappa, 0.0)
+
+            # --- u-update ---
+            u = u + Dx - z
+
+            # Check convergence (primal residual)
+            # r = Dx - z
+            # if np.linalg.norm(r) < self.tol: break
+
+        return x
+
 class ConsensusADMM:
     """
     Distributed processing simulator using Consensus ADMM.

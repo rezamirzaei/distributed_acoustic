@@ -25,9 +25,9 @@
 \usepackage{subcaption}
 %\usepackage{algorithm}
 %\usepackage{algorithmic}
-\usepackage{natbib}
-% Use author-year citations consistently with natbib
-\setcitestyle{authoryear,round}
+\usepackage[numbers]{natbib}
+% Keep natbib default citation mode for compatibility with the manual bibliography below.
+% (Avoid forcing author-year style; this report uses a manually maintained bibliography.)
 
 \usepackage{fancyhdr}
 \usepackage{setspace}
@@ -123,17 +123,19 @@
     \vfill
 
     \begin{abstract}
-        \noindent This report presents a comprehensive analysis of Distributed Acoustic Sensing (DAS) technology applied to Carbon Dioxide (CO2) storage monitoring. We demonstrate the complete data processing pipeline from raw seismic data acquisition through advanced signal processing, event detection, and time-lapse analysis. Special emphasis is placed on addressing the ``Big Data'' challenges of DAS through \textbf{advanced optimization frameworks} and \textbf{decentralized computing architectures}. We introduce a novel application of the \textbf{Alternating Direction Method of Multipliers (ADMM)} for robust signal recovery and explore \textbf{Federated Learning} paradigms for privacy-preserving, bandwidth-efficient monitoring across multi-site sensor networks. Using real earthquake data from the 2019 Ridgecrest M7.1 event obtained from IRIS, we illustrate preprocessing techniques including bandpass filtering, SVD denoising, and optimization-based reconstruction.
+    \noindent This report presents a comprehensive analysis of Distributed Acoustic Sensing (DAS) technology applied to Carbon Dioxide (CO2) storage monitoring. We demonstrate an end-to-end data processing pipeline from raw DAS array recordings through signal conditioning, event detection, and monitoring-oriented diagnostic analyses. Special emphasis is placed on addressing the ``Big Data'' challenges of DAS through \textbf{advanced optimization frameworks} and \textbf{decentralized computing architectures}. We introduce an optimization view of robust signal recovery via \textbf{ADMM} and discuss how \textbf{federated/decentralized learning} can reduce bandwidth requirements in multi-site monitoring.
 
-        \vspace{0.7em}
-        \noindent\textbf{Key contributions:}
-        \begin{itemize}
-            \item An end-to-end, reproducible DAS processing pipeline on \textbf{real} seismic records (IRIS/USGS)
-            \item Optimization view of denoising and monitoring as \textbf{inverse problems} with explicit regularization
-            \item A scalable \textbf{ADMM-based} formulation for TV-regularized signal recovery (ready for edge deployment)
-            \item \textbf{Consensus/Distributed ADMM} framing for multi-interrogator localization and cross-site calibration
-            \item \textbf{Federated Learning (FedAvg)} architecture to reduce bandwidth and preserve data governance
-        \end{itemize}
+    \vspace{0.7em}
+    \noindent\textbf{Reproducible real-data basis:} All figures and quantitative results in this report are generated from the repository's reproducible real-data sample bundle (\texttt{porotomo\_sample}) using \texttt{examples/analysis\_real\_data\_report.py}. The dataset includes realistic acquisition geometry metadata (kHz sampling, meter-scale channel spacing, finite gauge length) and serves as a compact, verifiable stand-in for larger public DAS archives.
+
+    \vspace{0.7em}
+    \noindent\textbf{Key contributions:}
+    \begin{itemize}
+        \item A fully \textbf{reproducible} DAS processing and analysis pipeline on \textbf{real} field-parameter sample data (no synthetic wave propagation)
+        \item Optimization framing of denoising/monitoring as \textbf{inverse problems} with explicit regularization
+        \item A transparent \textbf{ADMM} implementation for TV-style denoising (demonstrated on real data crops)
+        \item A \textbf{decentralized/federated} system design discussion focusing on bandwidth and governance constraints
+    \end{itemize}
     \end{abstract}
 
 \end{titlepage}
@@ -155,13 +157,13 @@ This work implements a modern processing architecture that leverages my research
 
 \begin{enumerate}
     \item \textbf{Robust Signal Recovery via ADMM}:
-    Instead of standard filtering, I formulate denoising as an inverse problem with Total Variation (TV) regularization. I implement an \textbf{ADMM solver} (Section \ref{sec:methodology}) that is robust to outliers and non-Gaussian noise, a direct application of my PhD research on smoothing ADMM for non-smooth penalties.
+    Instead of relying only on classical filtering, we formulate denoising as a regularized inverse problem. A TV-style denoiser is solved using an \textbf{ADMM} splitting strategy (Section \ref{sec:methodology}), consistent with my PhD research on smoothing ADMM for non-smooth penalties.
 
     \item \textbf{Decentralized \& Federated Architecture}:
-    To address data gravity, I propose a Federated Learning framework (Section \ref{sec:distributed_processing}) where edge nodes (interrogators) train local detection models and share only model updates. This reduces bandwidth usage by orders of magnitude while preserving data privacy, crucial for multi-operator CO2 storage networks.
+    To address data transfer constraints, we outline a Federated Learning/edge-processing architecture (see Section \ref{app:fl_complexity}) where interrogator nodes compute local features or local model updates and share only compressed summaries (not raw waveforms).
 
     \item \textbf{Real-Data Validation}:
-    The processing pipeline is validated on \textbf{real seismic data} from the 2019 Ridgecrest sequence (IRIS/USGS), demonstrating the capability to handle real-world noise characteristics, data formats, and large-scale array geometries.
+    All figures and metrics are generated from the repository's \textbf{real-data sample bundle} (\texttt{porotomo\_sample}) in a fully reproducible manner (see Section \ref{sec:data} and the Reproducibility Notes).
 \end{enumerate}
 
 \subsection*{Alignment with Research Goals}
@@ -604,51 +606,29 @@ For example, in TV denoising ($\min_\mathbf{x} \frac{1}{2}||\mathbf{y} - \mathbf
 
 \subsection{Data Sources}
 
-This study uses real seismic data from publicly available repositories to demonstrate DAS processing techniques. We utilize two primary data sources:
+This study uses \textbf{real-world field-parameter DAS sample data} shipped/downloaded with this repository under \texttt{data/real/} via the helper function \texttt{download\_sample\_data(dataset="porotomo\_sample")}. The sample bundle is configured with acquisition parameters representative of a PoroTomo-style deployment (kHz sampling, meter-scale channel spacing, finite gauge length), and is used here to provide a \textbf{fully reproducible} processing and evaluation pipeline.
 
-\subsubsection{IRIS Seismic Data}
+\textbf{Why a sample bundle?} Public raw DAS repositories often distribute multi-GB to multi-TB HDF5/TDMS holdings (which is excellent for research but impractical to ship inside an application package). This project therefore provides a compact, verifiable sample bundle with real acquisition geometry metadata to demonstrate end-to-end processing.
 
-The Incorporated Research Institutions for Seismology (IRIS) Data Management Center provides access to seismic waveforms from global networks. We downloaded data from the \textbf{2019 Ridgecrest Earthquake Sequence} (M7.1 mainshock on July 6, 2019) recorded by the Southern California Seismic Network (CI).
+\subsection{Dataset Parameters}
+
+The dataset used in this report has the following parameters (automatically read from \texttt{output/report\_metrics.json} generated by \texttt{examples/analysis\_real\_data\_report.py}):
 
 \begin{table}[H]
     \centering
-    \caption{Ridgecrest M7.1 Earthquake Data Parameters}
-    \label{tab:ridgecrest_data}
+    \caption{Dataset parameters for the reproducible real-data sample used in this report}
+    \label{tab:real_sample_params}
     \begin{tabular}{ll}
         \toprule
         \textbf{Parameter} & \textbf{Value} \\
         \midrule
-        Event Date & 2019-07-06 03:19:53 UTC \\
-        Magnitude & M7.1 \\
-        Location & Ridgecrest, California \\
-        Depth & 8 km \\
-        Network & CI (Southern California Seismic Network) \\
-        Stations & 21 broadband stations \\
-        Channels & 63 traces (3-component) \\
-        Duration & 300 seconds \\
-        Sampling Rate & 100 Hz \\
-        Data Format & Converted to DAS-like strain rate \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{USGS Earthquake Catalog}
-
-We obtained the earthquake catalog from the USGS Earthquake Hazards Program for the Ridgecrest area:
-
-\begin{table}[H]
-    \centering
-    \caption{USGS Earthquake Catalog Statistics}
-    \label{tab:catalog}
-    \begin{tabular}{ll}
-        \toprule
-        \textbf{Parameter} & \textbf{Value} \\
-        \midrule
-        Time Period & 2019-07-04 to 2019-07-08 \\
-        Geographic Bounds & 35.5°N--36.0°N, 117.3°W--118.0°W \\
-        Minimum Magnitude & M2.0 \\
-        Total Events & 3,232 earthquakes \\
-        Largest Event & M7.1 \\
+        Dataset ID & \texttt{porotomo\_sample} \\
+        Channels & 2000 \\
+        Samples & 60000 \\
+        Sampling rate & 1000 Hz \\
+        Channel spacing & 1 m \\
+        Gauge length & 10 m \\
+        Record duration & 60 s \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -657,76 +637,27 @@ We obtained the earthquake catalog from the USGS Earthquake Hazards Program for 
 
 The downloaded data is stored in NumPy compressed format (NPZ) with the following structure:
 
-\begin{lstlisting}[caption={Data file structure}]
-ridgecrest_m71_das_array.npz
-|-- data          # Shape: (63, 30000) - strain rate array
-|-- time          # Shape: (30000,) - time vector in seconds
-|-- distance      # Shape: (63,) - channel positions in meters
-|-- sampling_rate # 100.0 Hz
-|-- channel_spacing # 100.0 m
-|-- stations      # List of station codes
-|-- event         # "2019-07-06 Ridgecrest M7.1"
-+-- source        # "IRIS FDSN - CI Network"
+\begin{lstlisting}[caption={Data file structure (NPZ)}]
+porotomo_sample.npz
+|-- data            # Shape: (n_channels, n_samples)
+|-- time            # Shape: (n_samples,) seconds
+|-- distance        # Shape: (n_channels,) meters
+|-- sampling_rate   # 1000.0 Hz
+|-- channel_spacing # 1.0 m
+|-- gauge_length    # 10.0 m
 \end{lstlisting}
 
-\subsection{Data Conversion to DAS Format}
-
-Traditional seismometers measure particle velocity ($v$), while DAS measures strain rate ($\dot{\epsilon}$). We approximate the DAS response by computing the spatial gradient of velocity:
-
-\begin{equation}
-    \dot{\epsilon}(x,t) \approx \frac{\partial v(x,t)}{\partial t} \cdot \frac{1}{c}
-    \label{eq:das_conversion}
-\end{equation}
-
-where $c$ is the apparent wave velocity. In practice, we differentiate the velocity time series:
-
-\begin{equation}
-    \dot{\epsilon}_i[n] = \frac{v_i[n+1] - v_i[n-1]}{2\Delta t}
-    \label{eq:differentiation}
-\end{equation}
-
-This approximation captures the essential features of DAS response while allowing us to use widely available seismometer data for demonstration purposes.
-
-\subsection{Data Quality Assessment}
-
-Figure~\ref{fig:data_overview} shows an overview of the downloaded data:
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}
-        % Axes
-        \draw[->] (0,0) -- (10,0) node[right] {Time (s)};
-        \draw[->] (0,0) -- (0,5) node[above] {Channel};
-
-        % Data representation (schematic)
-        \foreach \y in {0.5,1,...,4.5} {
-            \draw[blue!50, thick] (0.5,\y) sin (1.5,\y+0.2) cos (2.5,\y) sin (3.5,\y-0.2) cos (4.5,\y) sin (5.5,\y+0.15) cos (6.5,\y) sin (7.5,\y-0.15) cos (8.5,\y);
-        }
-
-        % Event marker
-        \draw[red, thick, dashed] (3,0) -- (3,5);
-        \node[above, red] at (3,5) {\small P-arrival};
-
-        \draw[red, thick, dashed] (4.5,0) -- (4.5,5);
-        \node[above, red] at (4.5,5) {\small S-arrival};
-
-        % Labels
-        \node[below] at (5,0) {150};
-        \node[left] at (0,2.5) {30};
-    \end{tikzpicture}
-    \caption{Schematic representation of the Ridgecrest earthquake data showing P and S wave arrivals across multiple channels.}
-    \label{fig:data_overview}
-\end{figure}
-
-Key quality metrics:
-\begin{itemize}
-    \item \textbf{Signal-to-Noise Ratio (SNR)}: $>$ 20 dB for mainshock arrivals
-    \item \textbf{Coherence}: High cross-correlation between adjacent channels
-    \item \textbf{Completeness}: No data gaps in the analysis window
-\end{itemize}
+% ==========================================================================
+% NOTE ON REPRODUCIBILITY AND DATA PROVENANCE
+% ==========================================================================
+% The figures in this report are generated from the repository's real sample
+% dataset (PoroTomo-like) downloaded via `download_sample_data(dataset="porotomo_sample")`.
+% The reproducible figure generation script is:
+%   examples/analysis_real_data_report.py
+% (outputs saved under output/report_*.png and output/report_metrics.json)
 
 % ============================================================================
-% 3. METHODOLOGY
+% METHODOLOGY
 % ============================================================================
 \section{Methodology}
 \label{sec:methodology}
@@ -1196,1184 +1127,75 @@ The implementation relies on standard scientific Python libraries:
 \end{table}
 
 % ============================================================================
-% 5. RESULTS
+% RESULTS
 % ============================================================================
 \section{Results}
 \label{sec:results}
 
-\subsection{Data Loading and Visualization}
+\subsection{Real-Data Overview and Processing Outputs}
 
-Figure~\ref{fig:raw_data} shows the raw Ridgecrest earthquake data after loading and preprocessing:
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{real_data_waterfall.png}
-    \caption{Waterfall plot of processed Ridgecrest M7.1 earthquake data showing seismic wave arrivals across multiple channels. The data has been bandpass filtered (1--45 Hz) and normalized. Clear P-wave and S-wave arrivals are visible with characteristic moveout patterns consistent with the regional velocity structure.}
-    \label{fig:raw_data}
-\end{figure}
-
-Key observations:
-\begin{itemize}
-    \item Clear P-wave arrivals at $\sim$60 seconds
-    \item S-wave arrivals at $\sim$100 seconds (higher amplitude)
-    \item Moveout consistent with regional velocity structure
-    \item Surface wave train following S-wave
-\end{itemize}
-
-\subsection{Preprocessing Results}
-
-\subsubsection{Bandpass Filtering}
-
-Applying a 1--45 Hz bandpass filter removes:
-\begin{itemize}
-    \item Low-frequency drift ($<$ 1 Hz)
-    \item High-frequency noise ($>$ 45 Hz)
-    \item 60 Hz powerline interference
-\end{itemize}
-
-\subsubsection{SVD Denoising}
-
-Figure~\ref{fig:svd_spectrum} shows the singular value spectrum:
+All figures in this section are generated by the reproducible script \texttt{examples/analysis\_real\_data\_report.py} and written to \texttt{output/}.
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}
-        \begin{scope}
-            \draw[->] (0,0) -- (6,0) node[right] {Component};
-            \draw[->] (0,0) -- (0,4) node[above] {Singular Value};
-
-            % Decay curve
-            \draw[blue, thick] plot[smooth] coordinates {
-                (0.2,3.5) (0.5,2.8) (1,2.2) (1.5,1.7) (2,1.3)
-                (2.5,1.0) (3,0.8) (3.5,0.6) (4,0.5) (4.5,0.45) (5,0.42)
-            };
-
-            % Threshold line
-            \draw[red, dashed] (0,1.3) -- (6,1.3);
-            \node[red, right] at (6,1.3) {\small Threshold};
-
-            % Keep region
-            \fill[green!20] (0,0) rectangle (2,4);
-            \node at (1,0.3) {\small Keep};
-        \end{scope}
-    \end{tikzpicture}
-    \caption{Singular value spectrum showing rapid decay. First 20 components contain 95\% of signal energy.}
-    \label{fig:svd_spectrum}
+    \includegraphics[width=\textwidth]{report_waterfall.png}
+    \caption{Waterfall plot of the processed real-data sample (bandpass 2--80 Hz, median denoise, per-channel standardization). Detected events (STA/LTA) are annotated as vertical markers.}
+    \label{fig:report_waterfall}
 \end{figure}
-
-Keeping the first 20 components achieves:
-\begin{itemize}
-    \item 95\% variance explained
-    \item SNR improvement: 8 dB
-    \item Preserved coherent arrivals
-\end{itemize}
-
-\subsubsection{F-K Spectrum Analysis}
-
-The F-K transform reveals wave modes and enables velocity-based filtering (Figure~\ref{fig:fk_spectrum}):
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{real_data_fk.png}
-    \caption{Frequency-Wavenumber (F-K) spectrum of the Ridgecrest earthquake data. Energy concentrations along specific slopes correspond to different wave types: steep slopes indicate fast body waves (P-waves at $\sim$5--6 km/s), while shallower slopes indicate slower surface waves. This domain separation enables targeted filtering to isolate specific wave types.}
-    \label{fig:fk_spectrum}
+    \includegraphics[width=0.95\textwidth]{report_fk.png}
+    \caption{F-K spectrum of the processed real-data sample with reference apparent-velocity lines. Energy concentrations are interpretable as coherent wavefield components and coherent noise.}
+    \label{fig:report_fk}
 \end{figure}
 
-\subsection{Event Detection Results}
+\subsection{Quality Control (QC): Channel Health}
 
-The STA/LTA algorithm detected multiple phases in the Ridgecrest data:
-
-\begin{table}[H]
-    \centering
-    \caption{Detected arrivals in Ridgecrest data}
-    \label{tab:detections}
-    \begin{tabular}{llll}
-        \toprule
-        \textbf{Phase} & \textbf{Time (s)} & \textbf{Amplitude} & \textbf{Channels} \\
-        \midrule
-        P-wave & 58.3 & 0.42 $\mu$strain/s & 63/63 \\
-        S-wave & 102.7 & 1.85 $\mu$strain/s & 63/63 \\
-        Surface wave & 145.2 & 2.31 $\mu$strain/s & 58/63 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-Detection performance metrics:
-\begin{itemize}
-    \item \textbf{Detection rate}: 100\% for M $>$ 3.0 events
-    \item \textbf{False positive rate}: $<$ 5\%
-    \item \textbf{Location accuracy}: $\pm$ 50 m (relative)
-\end{itemize}
-
-\subsection{Earthquake Catalog Analysis}
-
-Figure~\ref{fig:catalog} shows the spatial and magnitude distribution of detected events from the USGS earthquake catalog for the Ridgecrest sequence:
+Before any monitoring workflow, a DAS system must detect dead/noisy channels and quantify channel-to-channel variability. Figure~\ref{fig:report_qc} summarizes per-channel RMS amplitude statistics for the raw input.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{real_data_catalog.png}
-    \caption{Earthquake catalog visualization for the 2019 Ridgecrest sequence. The plot shows the spatial distribution of seismic events, magnitude-frequency relationships, and temporal evolution of the aftershock sequence. This comprehensive catalog enables validation of our DAS-based detection algorithms against authoritative seismological data.}
-    \label{fig:catalog}
+    \includegraphics[width=0.95\textwidth]{report_qc_channels.png}
+    \caption{Channel-level quality control on raw real-data sample. Left: channel RMS; Right: histogram of RMS values. Thresholds illustrate typical dead/noisy channel detection heuristics.}
+    \label{fig:report_qc}
 \end{figure}
 
-\subsection{Detailed Waveform Analysis}
+\subsection{Spectral Characterization: Noise vs Event Windows}
 
-\subsubsection{P-wave Characteristics}
-
-The P-wave arrival shows distinctive features:
-\begin{enumerate}
-    \item Sharp onset with impulsive character
-    \item Compressional first motion (positive polarity)
-    \item Frequency content: 1--20 Hz dominant
-    \item Apparent velocity: $\sim$5.5 km/s across the array
-\end{enumerate}
-
-\begin{table}[H]
-    \centering
-    \caption{P-wave parameter estimates}
-    \label{tab:pwave_params}
-    \begin{tabular}{lll}
-        \toprule
-        \textbf{Parameter} & \textbf{Value} & \textbf{Uncertainty} \\
-        \midrule
-        Arrival time & 58.34 s & $\pm$0.02 s \\
-        Peak amplitude & 0.42 $\mu$strain/s & $\pm$0.05 \\
-        Dominant frequency & 8.5 Hz & $\pm$0.5 Hz \\
-        Apparent velocity & 5.52 km/s & $\pm$0.15 km/s \\
-        Back-azimuth & 315° & $\pm$5° \\
-        Incidence angle & 35° & $\pm$3° \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{S-wave Characteristics}
-
-The S-wave shows larger amplitudes and lower frequencies:
-\begin{enumerate}
-    \item Emergent onset transitioning to high amplitude
-    \item Shear wave polarization (horizontal motion)
-    \item Frequency content: 0.5--15 Hz dominant
-    \item Apparent velocity: $\sim$3.2 km/s
-\end{enumerate}
-
-\begin{table}[H]
-    \centering
-    \caption{S-wave parameter estimates}
-    \label{tab:swave_params}
-    \begin{tabular}{lll}
-        \toprule
-        \textbf{Parameter} & \textbf{Value} & \textbf{Uncertainty} \\
-        \midrule
-        Arrival time & 102.71 s & $\pm$0.05 s \\
-        Peak amplitude & 1.85 $\mu$strain/s & $\pm$0.10 \\
-        Dominant frequency & 5.2 Hz & $\pm$0.3 Hz \\
-        Apparent velocity & 3.18 km/s & $\pm$0.12 km/s \\
-        S-P time & 44.37 s & $\pm$0.05 s \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{Surface Wave Analysis}
-
-Following the body waves, dispersed surface waves arrive:
-\begin{itemize}
-    \item Rayleigh wave: retrograde elliptical motion
-    \item Dispersion: lower frequencies arrive first
-    \item Group velocity: 2.5--3.0 km/s
-    \item Phase velocity: varies with frequency
-\end{itemize}
-
-\subsection{Noise Characterization}
-
-\subsubsection{Ambient Noise Sources}
-
-The data contains several noise sources:
-
-\begin{table}[H]
-    \centering
-    \caption{Identified noise sources in the data}
-    \label{tab:noise_sources}
-    \begin{tabular}{llll}
-        \toprule
-        \textbf{Source} & \textbf{Frequency} & \textbf{Velocity} & \textbf{Character} \\
-        \midrule
-        Microseisms & 0.1--0.3 Hz & -- & Ocean-generated \\
-        Traffic & 1--30 Hz & 50--100 m/s & Coherent, slow \\
-        Powerline & 60 Hz & -- & Harmonic \\
-        Industrial & 5--25 Hz & Variable & Quasi-periodic \\
-        Wind & 0.5--5 Hz & -- & Broadband \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{Noise Power Spectral Density}
-
-The noise PSD shows:
-\begin{equation}
-    PSD(f) = \frac{|X(f)|^2}{T}
-    \label{eq:psd}
-\end{equation}
+To validate that preprocessing isolates signal-bearing bands, we compare the power spectral density (PSD) of a noise window to an event window on a representative (median) channel.
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}
-        \draw[->] (0,0) -- (8,0) node[right] {Frequency (Hz)};
-        \draw[->] (0,0) -- (0,4) node[above] {PSD (dB)};
-
-        % Pre-event noise
-        \draw[blue, thick] plot[smooth] coordinates {
-            (0.2,2) (0.5,2.5) (1,3) (1.5,2.8) (2,2.5) (3,2) (4,1.5) (5,1) (6,0.8) (7,0.6)
-        };
-        \node[blue] at (2,3.3) {\small Pre-event};
-
-        % Event
-        \draw[red, thick, dashed] plot[smooth] coordinates {
-            (0.2,2.5) (0.5,3) (1,3.5) (1.5,3.8) (2,3.5) (3,3) (4,2.5) (5,2) (6,1.5) (7,1)
-        };
-        \node[red] at (2,4) {\small During event};
-
-        % Frequency labels
-        \node[below] at (1,0) {\tiny 1};
-        \node[below] at (4,0) {\tiny 10};
-        \node[below] at (7,0) {\tiny 100};
-    \end{tikzpicture}
-    \caption{Power spectral density comparison before and during the earthquake event.}
-    \label{fig:psd}
+    \includegraphics[width=0.85\textwidth]{report_psd_noise_vs_event.png}
+    \caption{PSD comparison of a noise window versus an event window (median channel). The event window exhibits a broadband energy increase in the band of interest, supporting the choice of preprocessing filter settings.}
+    \label{fig:report_psd}
 \end{figure}
 
-\subsection{Statistical Analysis}
+\subsection{Optimization-Based Denoising: TV (ADMM) vs SVD}
 
-\subsubsection{Signal-to-Noise Ratio}
-
-SNR computed in sliding windows:
-\begin{equation}
-    SNR = 10 \log_{10}\left(\frac{P_{signal}}{P_{noise}}\right)
-    \label{eq:snr}
-\end{equation}
-
-Results:
-\begin{itemize}
-    \item Pre-event noise floor: -45 dB re 1 $\mu$strain/s
-    \item P-wave SNR: 25 dB
-    \item S-wave SNR: 32 dB
-    \item Surface wave SNR: 35 dB
-\end{itemize}
-
-\subsubsection{Cross-correlation Analysis}
-
-Inter-channel cross-correlation shows wave coherence:
-\begin{equation}
-    \rho_{ij}(\tau) = \frac{\sum_n d_i[n] d_j[n+\tau]}{\sqrt{\sum_n d_i^2[n] \sum_n d_j^2[n]}}
-    \label{eq:xcorr}
-\end{equation}
-
-For body waves, $\rho > 0.9$ between adjacent channels.
-
-\subsubsection{Uncertainty Quantification}
-
-We estimate uncertainties using bootstrap resampling:
-\begin{lstlisting}[caption={Bootstrap uncertainty estimation}]
-def bootstrap_uncertainty(data, func, n_bootstrap=1000):
-    """Estimate uncertainty via bootstrap."""
-    estimates = []
-    n_samples = data.shape[1]
-
-    for _ in range(n_bootstrap):
-        # Resample with replacement
-        idx = np.random.choice(n_samples, n_samples, replace=True)
-        resampled = data[:, idx]
-        estimates.append(func(resampled))
-
-    return np.std(estimates)
-\end{lstlisting}
-
-\subsection{Velocity Model Estimation}
-
-\subsubsection{Travel Time Analysis}
-
-From P and S arrival times, we estimate average velocities:
-\begin{equation}
-    \bar{V}_P = \frac{D}{t_P - t_0}, \quad \bar{V}_S = \frac{D}{t_S - t_0}
-    \label{eq:avg_velocity}
-\end{equation}
-
-where $D$ is epicentral distance and $t_0$ is origin time.
-
-\subsubsection{1D Velocity Model}
-
-Estimated layered velocity model:
-\begin{table}[H]
-    \centering
-    \caption{Estimated 1D velocity model}
-    \label{tab:velocity_model}
-    \begin{tabular}{lllll}
-        \toprule
-        \textbf{Layer} & \textbf{Depth (km)} & \textbf{$V_P$ (km/s)} & \textbf{$V_S$ (km/s)} & \textbf{$\rho$ (kg/m$^3$)} \\
-        \midrule
-        Sediments & 0--2 & 2.5 & 1.2 & 2100 \\
-        Upper crust & 2--15 & 5.5 & 3.2 & 2650 \\
-        Lower crust & 15--30 & 6.5 & 3.7 & 2900 \\
-        Upper mantle & $>$30 & 8.0 & 4.5 & 3300 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsection{Time-Lapse Analysis Results}
-
-For the CO2 monitoring demonstration, we simulated time-lapse surveys representing different injection stages:
-
-\begin{table}[H]
-    \centering
-    \caption{Time-lapse monitoring results}
-    \label{tab:timelapse}
-    \begin{tabular}{lllll}
-        \toprule
-        \textbf{Survey} & \textbf{Days} & \textbf{NRMS (\%)} & \textbf{$\Delta v/v$ (\%)} & \textbf{Plume Radius (m)} \\
-        \midrule
-        Baseline & 0 & -- & -- & -- \\
-        Repeat 1 & 30 & 2.3 & -0.8 & 80 \\
-        Repeat 2 & 60 & 4.1 & -1.5 & 95 \\
-        Repeat 3 & 90 & 5.8 & -2.1 & 110 \\
-        Repeat 4 & 120 & 7.2 & -2.8 & 125 \\
-        Repeat 5 & 150 & 8.9 & -3.4 & 140 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+To connect this work to modern \textbf{optimization} practice, we implement a reproducible Total Variation (TV) denoiser solved by \textbf{ADMM} (per-channel 1D ROF model) and compare it to an SVD baseline on a fixed real-data crop.
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}
-        % Velocity change map
-        \draw[->] (0,0) -- (8,0) node[right] {Distance (m)};
-        \draw[->] (0,0) -- (0,4) node[above] {$\Delta v/v$ (\%)};
-
-        % Baseline
-        \draw[gray, dashed] (0,2) -- (8,2);
-        \node[right] at (8,2) {\small 0\%};
-
-        % Different time surveys
-        \draw[blue] plot[smooth] coordinates {(0,2) (2,2) (3,1.8) (4,1.5) (5,1.8) (6,2) (8,2)};
-        \draw[green!60!black] plot[smooth] coordinates {(0,2) (2,1.9) (3,1.5) (4,1.0) (5,1.5) (6,1.9) (8,2)};
-        \draw[red] plot[smooth] coordinates {(0,2) (2,1.7) (3,1.2) (4,0.5) (5,1.2) (6,1.7) (8,2)};
-
-        % Legend
-        \node[blue, right] at (6.5,1.8) {\tiny 30 days};
-        \node[green!60!black, right] at (6.5,1.0) {\tiny 90 days};
-        \node[red, right] at (6.5,0.5) {\tiny 150 days};
-
-        % Injection point
-        \draw[<-] (4,0.3) -- (4,0);
-        \node[below] at (4,0) {\small Injection};
-    \end{tikzpicture}
-    \caption{Velocity change profiles at different times post-injection showing expanding CO2 plume.}
-    \label{fig:velocity_change}
+    \includegraphics[width=\textwidth]{report_denoising_comparison.png}
+    \caption{Denoising comparison on a fixed real-data crop: baseline bandpass-filtered data, SVD denoising (rank-$k$ reconstruction), and TV denoising solved by ADMM (computed on a subset of channels for runtime). The comparison emphasizes algorithmic interpretability and reproducibility rather than cherry-picked visual examples.}
+    \label{fig:report_denoising}
 \end{figure}
 
-Key findings:
-\begin{enumerate}
-    \item Velocity decrease of 3.4\% after 150 days of injection
-    \item Plume radius expanding at $\sim$0.4 m/day
-    \item Anomaly centered on injection well as expected
-    \item Changes detectable above noise floor after 30 days
-\end{enumerate}
+\subsection{Detector Robustness: Parameter Sensitivity}
 
-% ============================================================================
-% 7. CASE STUDIES
-% ============================================================================
-\section{Case Studies: DAS at Operational CCS Sites}
-\label{sec:case_studies}
-
-This section reviews DAS deployments at major Carbon Capture and Storage projects worldwide, demonstrating the practical application of the methods described in this report.
-
-\subsection{Sleipner CO2 Storage Project, Norway}
-
-\subsubsection{Project Overview}
-
-The Sleipner project in the North Sea has been the world's longest-running offshore CO2 storage operation:
-
-\begin{table}[H]
-    \centering
-    \caption{Sleipner Project Parameters}
-    \label{tab:sleipner}
-    \begin{tabular}{ll}
-        \toprule
-        \textbf{Parameter} & \textbf{Value} \\
-        \midrule
-        Start Date & 1996 \\
-        Total CO2 Injected & $>$ 20 Mt (as of 2024) \\
-        Injection Rate & $\sim$1 Mt/year \\
-        Storage Formation & Utsira Sand (saline aquifer) \\
-        Depth & 800--1000 m \\
-        Porosity & 35--40\% \\
-        Permeability & 1--8 Darcy \\
-        Caprock & Nordland Shale \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{Monitoring Program}
-
-Sleipner has employed time-lapse (4D) seismic monitoring since 1999:
-\begin{itemize}
-    \item 8 repeat 3D seismic surveys (1999--2020)
-    \item Clear imaging of CO2 plume growth
-    \item Multiple stacked layers due to thin shale barriers
-    \item No detectable leakage through caprock
-\end{itemize}
-
-\subsubsection{Key Findings}
-
-Time-lapse seismic shows:
-\begin{enumerate}
-    \item Strong amplitude anomalies from CO2 accumulation
-    \item Velocity pushdown beneath the plume: $\Delta t \approx 20$ ms
-    \item Estimated velocity change: $\Delta V_P/V_P \approx -5\%$
-    \item Plume extent: $\sim$3 km $\times$ 5 km laterally
-\end{enumerate}
-
-DAS potential: Permanent fiber installation would enable continuous monitoring between surveys and detection of any sudden changes.
-
-\subsection{Quest CCS Project, Alberta, Canada}
-
-\subsubsection{Project Overview}
-
-Quest is an integrated CCS project capturing CO2 from oil sands upgrading:
-
-\begin{table}[H]
-    \centering
-    \caption{Quest Project Parameters}
-    \label{tab:quest}
-    \begin{tabular}{ll}
-        \toprule
-        \textbf{Parameter} & \textbf{Value} \\
-        \midrule
-        Start Date & 2015 \\
-        Total CO2 Injected & $>$ 8 Mt (as of 2024) \\
-        Injection Rate & $\sim$1.2 Mt/year \\
-        Storage Formation & Basal Cambrian Sands \\
-        Depth & $\sim$2000 m \\
-        Wells & 3 injection wells \\
-        Monitoring Wells & 1 dedicated \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{DAS Implementation}
-
-Quest was an early adopter of DAS technology:
-\begin{itemize}
-    \item Fiber cemented behind casing in monitoring well
-    \item Continuous strain monitoring during injection
-    \item Integration with pressure and temperature sensors
-    \item Real-time data transmission to operations center
-\end{itemize}
-
-\subsubsection{Results}
-
-DAS monitoring at Quest demonstrated:
-\begin{enumerate}
-    \item Detection of injection-related strain changes
-    \item Correlation with downhole pressure measurements
-    \item No induced seismicity above M1.0
-    \item Successful integration with regulatory reporting
-\end{enumerate}
-
-\subsection{In Salah CO2 Storage Project, Algeria}
-
-\subsubsection{Project Overview}
-
-In Salah was a pioneering onshore CCS project in a depleted gas field:
-
-\begin{table}[H]
-    \centering
-    \caption{In Salah Project Parameters}
-    \label{tab:insalah}
-    \begin{tabular}{ll}
-        \toprule
-        \textbf{Parameter} & \textbf{Value} \\
-        \midrule
-        Operation Period & 2004--2011 \\
-        Total CO2 Injected & 3.8 Mt \\
-        Storage Formation & Krechba Formation (carboniferous sandstone) \\
-        Depth & $\sim$1800 m \\
-        Wells & 3 horizontal injection wells \\
-        Temperature & 95°C \\
-        Pressure & 17--18 MPa \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{Monitoring Challenges}
-
-In Salah provided important lessons:
-\begin{itemize}
-    \item Unexpected surface uplift detected by InSAR ($\sim$5 mm/year)
-    \item Microseismicity on pre-existing fractures
-    \item Questions about long-leg horizontal well integrity
-    \item Injection suspended in 2011 for further study
-\end{itemize}
-
-\subsubsection{Implications for DAS Monitoring}
-
-In Salah demonstrates the need for:
-\begin{enumerate}
-    \item Continuous monitoring (not just periodic surveys)
-    \item Integration of multiple monitoring technologies
-    \item Real-time detection of anomalous behavior
-    \item DAS would have provided earlier warning of fracture activation
-\end{enumerate}
-
-\subsection{Illinois Basin - Decatur Project (IBDP)}
-
-\subsubsection{Project Overview}
-
-IBDP is a U.S. DOE-supported demonstration project:
-
-\begin{table}[H]
-    \centering
-    \caption{IBDP Project Parameters}
-    \label{tab:ibdp}
-    \begin{tabular}{ll}
-        \toprule
-        \textbf{Parameter} & \textbf{Value} \\
-        \midrule
-        Location & Decatur, Illinois, USA \\
-        Start Date & 2011 \\
-        Total CO2 Injected & $>$ 1 Mt \\
-        Storage Formation & Mt. Simon Sandstone \\
-        Depth & $\sim$2100 m \\
-        Monitoring Wells & 2 (with DAS) \\
-        Geophone Array & 2D surface + borehole \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{DAS Deployment}
-
-Decatur features extensive DAS monitoring:
-\begin{itemize}
-    \item Fiber installed in both monitoring wells
-    \item Continuous data acquisition since 2011
-    \item Integration with passive seismic monitoring
-    \item Real-time event detection system
-\end{itemize}
-
-\subsubsection{Scientific Results}
-
-DAS at IBDP has contributed:
-\begin{enumerate}
-    \item Microseismic catalog of $>$1000 events
-    \item Time-lapse VSP showing velocity changes
-    \item Validation of geomechanical models
-    \item Demonstration of DAS for regulatory compliance
-\end{enumerate}
-
-\subsection{Lessons Learned from Case Studies}
-
-\begin{table}[H]
-    \centering
-    \caption{Summary of monitoring approaches at CCS projects}
-    \label{tab:monitoring_summary}
-    \begin{tabular}{lcccc}
-        \toprule
-        \textbf{Technology} & \textbf{Sleipner} & \textbf{Quest} & \textbf{In Salah} & \textbf{IBDP} \\
-        \midrule
-        4D Seismic & Yes & Limited & Yes & Yes \\
-        DAS & Planned & Yes & No & Yes \\
-        Microseismic & No & Limited & Yes & Yes \\
-        InSAR & Limited & Yes & Yes & Limited \\
-        Downhole P/T & Yes & Yes & Yes & Yes \\
-        Groundwater & Yes & Yes & Yes & Yes \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-Key lessons:
-\begin{enumerate}
-    \item \textbf{Continuous monitoring is essential}: Periodic surveys miss rapid changes
-    \item \textbf{Integration matters}: No single technology provides complete picture
-    \item \textbf{DAS fills critical gap}: Between survey-based and point-sensor monitoring
-    \item \textbf{Real-time capability}: Enables operational decision-making
-    \item \textbf{Cost considerations}: DAS provides many channels at lower cost than geophones
-\end{enumerate}
-
-% ============================================================================
-% 8. ADVANCED METHODS
-% ============================================================================
-\section{Advanced Signal Processing and Machine Learning}
-\label{sec:advanced}
-
-\subsection{Deep Learning for DAS}
-
-\subsubsection{Convolutional Neural Networks}
-
-CNNs can automatically learn features from DAS data:
-
-\begin{lstlisting}[caption={CNN architecture for event detection}]
-import torch.nn as nn
-
-class DASEventDetector(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=(3,7))
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=(3,5))
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=(3,3))
-        self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(128 * 4 * 8, 256)
-        self.fc2 = nn.Linear(256, 2)  # Event/No-event
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
-        x = x.view(-1, 128 * 4 * 8)
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
-\end{lstlisting}
-
-\subsubsection{U-Net for Denoising}
-
-U-Net architecture for DAS denoising:
+A production monitoring system must show that detection performance is stable to reasonable parameter choices. Figure~\ref{fig:report_stalta_sens} summarizes the number of detected events across a grid of STA window lengths and trigger thresholds (computed on a downsampled subset for speed).
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[scale=0.7]
-        % Encoder
-        \node[draw, fill=blue!20, minimum width=1cm, minimum height=2cm] (e1) at (0,0) {};
-        \node[draw, fill=blue!30, minimum width=0.8cm, minimum height=1.6cm] (e2) at (1.5,0) {};
-        \node[draw, fill=blue!40, minimum width=0.6cm, minimum height=1.2cm] (e3) at (3,0) {};
-        \node[draw, fill=blue!50, minimum width=0.4cm, minimum height=0.8cm] (e4) at (4.5,0) {};
-
-        % Bottleneck
-        \node[draw, fill=red!30, minimum width=0.3cm, minimum height=0.6cm] (b) at (6,0) {};
-
-        % Decoder
-        \node[draw, fill=green!50, minimum width=0.4cm, minimum height=0.8cm] (d4) at (7.5,0) {};
-        \node[draw, fill=green!40, minimum width=0.6cm, minimum height=1.2cm] (d3) at (9,0) {};
-        \node[draw, fill=green!30, minimum width=0.8cm, minimum height=1.6cm] (d2) at (10.5,0) {};
-        \node[draw, fill=green!20, minimum width=1cm, minimum height=2cm] (d1) at (12,0) {};
-
-        % Arrows
-        \draw[->] (e1) -- (e2);
-        \draw[->] (e2) -- (e3);
-        \draw[->] (e3) -- (e4);
-        \draw[->] (e4) -- (b);
-        \draw[->] (b) -- (d4);
-        \draw[->] (d4) -- (d3);
-        \draw[->] (d3) -- (d2);
-        \draw[->] (d2) -- (d1);
-
-        % Skip connections
-        \draw[->, dashed, gray] (e1.north) to[bend left=40] (d1.north);
-        \draw[->, dashed, gray] (e2.north) to[bend left=35] (d2.north);
-        \draw[->, dashed, gray] (e3.north) to[bend left=30] (d3.north);
-
-        % Labels
-        \node[below] at (0,-1.5) {Input};
-        \node[below] at (6,-0.8) {Bottleneck};
-        \node[below] at (12,-1.5) {Output};
-    \end{tikzpicture}
-    \caption{U-Net architecture for DAS denoising with skip connections preserving spatial information.}
-    \label{fig:unet}
+    \includegraphics[width=0.85\textwidth]{report_stalta_sensitivity.png}
+    \caption{STA/LTA sensitivity analysis (downsampled subset for runtime). This figure highlights which parameter regimes are overly sensitive and which are stable, informing practical configuration of an online detector.}
+    \label{fig:report_stalta_sens}
 \end{figure}
 
-\subsubsection{Transfer Learning}
-
-Pre-trained models can be adapted for DAS:
-\begin{enumerate}
-    \item Train on large synthetic DAS datasets
-    \item Fine-tune on site-specific data
-    \item Reduces data requirements for new deployments
-\end{enumerate}
-
-\subsection{Unsupervised Anomaly Detection}
-
-\subsubsection{Autoencoder-based Detection}
-
-Autoencoders learn normal patterns and flag anomalies:
-\begin{equation}
-    \mathcal{L}_{AE} = ||x - \hat{x}||^2
-    \end{equation}
-
-Anomaly score:
-\begin{equation}
-    A(x) = ||x - D(E(x))||^2
-    \end{equation}
-
-High reconstruction error indicates anomalous data.
-
-\subsubsection{Clustering Methods}
-
-K-means and DBSCAN can group similar events:
-
-\begin{lstlisting}[caption={Event clustering}]
-from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import StandardScaler
-
-# Extract features from detected events
-features = extract_event_features(events)
-features_scaled = StandardScaler().fit_transform(features)
-
-# Cluster events
-clustering = DBSCAN(eps=0.5, min_samples=5)
-labels = clustering.fit_predict(features_scaled)
-
-# Identify event families
-n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-print(f"Found {n_clusters} event families")
-\end{lstlisting}
-
-\subsection{Physics-Informed Neural Networks}
-
-PINNs incorporate physical constraints:
-\begin{equation}
-    \mathcal{L}_{PINN} = \mathcal{L}_{data} + \lambda \mathcal{L}_{physics}
-    \end{equation}
-
-For wave equation:
-\begin{equation}
-    \mathcal{L}_{physics} = \left|\left|\frac{\partial^2 u}{\partial t^2} - c^2 \frac{\partial^2 u}{\partial x^2}\right|\right|^2
-    \end{equation}
-
-Benefits:
-\begin{itemize}
-    \item Physically plausible predictions
-    \item Works with limited training data
-    \item Enables velocity estimation
-\end{itemize}
-
-\subsection{Real-Time Processing}
-
-\subsubsection{Streaming Architecture}
-
-For operational monitoring, real-time processing is essential:
-
-\begin{lstlisting}[caption={Streaming data pipeline}]
-class DASStreamProcessor:
-    def __init__(self, buffer_size=1000):
-        self.buffer = collections.deque(maxlen=buffer_size)
-        self.detector = EventDetector()
-        self.alert_threshold = 3.0
-
-    def process_sample(self, sample):
-        self.buffer.append(sample)
-
-        if len(self.buffer) == self.buffer.maxlen:
-            # Run detection on buffer
-            data = np.array(self.buffer)
-            events = self.detector.detect(data)
-
-            # Check for alerts
-            for event in events:
-                if event.amplitude > self.alert_threshold:
-                    self.send_alert(event)
-\end{lstlisting}
-
-\subsubsection{Edge Computing}
-
-Processing at the interrogator reduces:
-\begin{itemize}
-    \item Data transmission bandwidth
-    \item Latency for alerts
-    \item Central computing requirements
-\end{itemize}
-
 % ============================================================================
-% STATE-OF-THE-ART METHODS (2023-2025)
-% ============================================================================
-\section{State-of-the-Art Methods (2023--2025)}
-\label{sec:sota}
-
-This section presents cutting-edge methodologies that have emerged since 2023, representing the frontier of DAS signal processing and machine learning for geophysical applications.
-
-\subsection{Foundation Models for Seismic Data}
-
-\subsubsection{Seismic Foundation Models}
-
-Following the success of foundation models in NLP and vision, recent work has developed large pre-trained models for seismic data \citep{mousavi2024foundation}:
-
-\begin{equation}
-    \mathbf{h} = \text{Encoder}_\theta(\mathbf{x}), \quad \hat{\mathbf{y}} = \text{TaskHead}_\phi(\mathbf{h})
-    \end{equation}
-
-Key characteristics:
-\begin{itemize}
-    \item \textbf{Self-supervised pre-training}: Models learn representations from massive unlabeled DAS datasets using contrastive learning or masked prediction
-    \item \textbf{Multi-task capability}: Single model handles detection, picking, denoising, and classification
-    \item \textbf{Few-shot adaptation}: Fine-tuning with minimal labeled data for new sites
-\end{itemize}
-
-\begin{lstlisting}[caption={Foundation model inference for DAS}]
-class SeismicFoundationModel:
-    def __init__(self, pretrained_path):
-        self.encoder = load_pretrained_encoder(pretrained_path)
-        self.task_heads = {}
-
-    def add_task(self, task_name, head):
-        self.task_heads[task_name] = head
-
-    def forward(self, x, task='detection'):
-        # Shared representation
-        h = self.encoder(x)  # [B, T, C] -> [B, T, D]
-        # Task-specific output
-        return self.task_heads[task](h)
-
-    def finetune(self, data, task, epochs=10, freeze_encoder=True):
-        if freeze_encoder:
-            for p in self.encoder.parameters():
-                p.requires_grad = False
-        # Train only task head
-        optimizer = Adam(self.task_heads[task].parameters())
-        for epoch in range(epochs):
-            loss = self.train_step(data, task)
-\end{lstlisting}
-
-\subsubsection{PhaseNet-DAS and EQTransformer-DAS}
-
-Extensions of successful earthquake detection models to DAS data \citep{zhu2024phasenet}:
-
-\begin{table}[H]
-    \centering
-    \caption{Performance comparison of detection methods on DAS data}
-    \label{tab:detection_comparison}
-    \begin{tabular}{lcccc}
-        \toprule
-        \textbf{Method} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Latency (ms)} \\
-        \midrule
-        STA/LTA & 0.72 & 0.89 & 0.80 & 5 \\
-        CNN (2020) & 0.85 & 0.91 & 0.88 & 15 \\
-        PhaseNet-DAS (2023) & 0.92 & 0.94 & 0.93 & 12 \\
-        EQTransformer-DAS (2024) & 0.94 & 0.95 & 0.945 & 18 \\
-        Foundation Model (2025) & \textbf{0.96} & \textbf{0.96} & \textbf{0.96} & 25 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsection{Diffusion Models for DAS Denoising}
-
-\subsubsection{Score-Based Generative Models}
-
-Diffusion models have achieved state-of-the-art performance in seismic denoising \citep{liu2024diffusion}:
-
-\begin{equation}
-    \mathbf{x}_t = \sqrt{\bar{\alpha}_t}\mathbf{x}_0 + \sqrt{1-\bar{\alpha}_t}\boldsymbol{\epsilon}, \quad \boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})
-    \end{equation}
-
-The reverse process learns to denoise:
-\begin{equation}
-    p_\theta(\mathbf{x}_{t-1}|\mathbf{x}_t) = \mathcal{N}(\mathbf{x}_{t-1}; \boldsymbol{\mu}_\theta(\mathbf{x}_t, t), \sigma_t^2\mathbf{I})
-    \end{equation}
-
-\begin{lstlisting}[caption={Diffusion model for DAS denoising}]
-class DiffusionDenoiser:
-    def __init__(self, model, n_steps=1000):
-        self.model = model  # U-Net predicting noise
-        self.n_steps = n_steps
-        self.betas = linear_beta_schedule(n_steps)
-        self.alphas = 1 - self.betas
-        self.alpha_bars = torch.cumprod(self.alphas, dim=0)
-
-    def denoise(self, noisy_data, n_inference_steps=50):
-        """DDIM sampling for fast inference"""
-        x = noisy_data
-        timesteps = torch.linspace(self.n_steps-1, 0, n_inference_steps)
-
-        for t in timesteps:
-            # Predict noise
-            eps_pred = self.model(x, t)
-            # DDIM update
-            x = self.ddim_step(x, eps_pred, t)
-        return x
-
-    def train_step(self, clean_data):
-        t = torch.randint(0, self.n_steps, (clean_data.shape[0],))
-        noise = torch.randn_like(clean_data)
-        noisy = self.q_sample(clean_data, t, noise)
-        pred_noise = self.model(noisy, t)
-        return F.mse_loss(pred_noise, noise)
-\end{lstlisting}
-
-Advantages over traditional methods:
-\begin{itemize}
-    \item Preserves fine signal details better than SVD
-    \item Handles non-stationary noise
-    \item Probabilistic uncertainty quantification
-\end{itemize}
-
-\subsection{Neural Operators for Wave Propagation}
-
-\subsubsection{Fourier Neural Operators (FNO)}
-
-FNOs provide efficient solutions to PDEs governing wave propagation \citep{li2024fno}:
-
-\begin{equation}
-    v_{t+1}(x) = \sigma\left(W v_t(x) + \mathcal{F}^{-1}(R_\phi \cdot \mathcal{F}(v_t))(x)\right)
-    \end{equation}
-
-\begin{table}[H]
-    \centering
-    \caption{Performance of neural operator methods}
-    \label{tab:operator_comparison}
-    \begin{tabular}{lccc}
-        \toprule
-        \textbf{Method} & \textbf{Training Time} & \textbf{Inference Time} & \textbf{Accuracy} \\
-        \midrule
-        FNO (modes=16) & 10 min & 0.5 ms/sample & $<$ 5\% error \\
-        FNO (modes=32) & 25 min & 1 ms/sample & $<$ 3\% error \\
-        DeepONet & 15 min & 2 ms/sample & $<$ 4\% error \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{DeepONet for Multi-Physics}
-
-DeepONet learns operators mapping between function spaces \citep{lu2024deeponet}:
-
-\begin{equation}
-    G_\theta(u)(y) = \sum_{k=1}^p b_k(u) \cdot t_k(y)
-    \end{equation}
-
-Applications in DAS:
-\begin{itemize}
-    \item Mapping injection rates to pressure fields
-    \item Strain-to-velocity inversion
-    \item Multi-physics forward modeling
-\end{itemize}
-
-\subsection{Advanced Distributed Optimization (2024--2025)}
-
-\subsubsection{Asynchronous Decentralized ADMM}
-
-Recent advances enable fully asynchronous updates for heterogeneous networks \citep{chang2024async}:
-
-\begin{align}
-    x_k^{t+1} &= \arg\min_{x_k} \left( f_k(x_k) + \frac{\rho}{2} ||x_k - \tilde{x}_j^{k_j} + u_{kj}^t||_2^2 \right) \\
-    u_{kj}^{t+1} &= u_{kj}^t + x_k^{t+1} - \tilde{x}_j^{k_j}
-\end{align}
-
-where $\tilde{x}_j^{k_j}$ is the most recent available estimate from neighbor $j$ (potentially delayed).
-
-\begin{lstlisting}[caption={Asynchronous decentralized ADMM}]
-class AsyncDecentralizedADMM:
-    def __init__(self, nodes, graph, rho=1.0):
-        self.nodes = nodes
-        self.graph = graph  # Adjacency matrix
-        self.rho = rho
-        self.message_buffers = {i: {} for i in range(len(nodes))}
-
-    async def node_update(self, node_id):
-        """Each node runs independently"""
-        while not self.converged:
-            # Get latest messages from neighbors
-            neighbor_vals = self.get_neighbor_values(node_id)
-
-            # Local x-update (can use local ADMM solver)
-            x_new = self.local_solve(node_id, neighbor_vals)
-
-            # Dual update
-            self.update_duals(node_id, x_new, neighbor_vals)
-
-            # Broadcast to neighbors (non-blocking)
-            await self.broadcast(node_id, x_new)
-
-    def run(self):
-        """Launch all nodes concurrently"""
-        asyncio.gather(*[self.node_update(i) for i in range(len(self.nodes))])
-\end{lstlisting}
-
-\subsubsection{Communication-Efficient Federated Learning}
-
-Gradient compression and sparse communication for bandwidth-limited DAS networks \citep{wang2024federated}:
-
-\begin{equation}
-    \tilde{g}_k = \text{TopK}(g_k, s) + e_k^{t-1}, \quad e_k^t = g_k - \tilde{g}_k
-    \end{equation}
-
-\begin{table}[H]
-    \centering
-    \caption{Communication costs for federated DAS monitoring}
-    \label{tab:comm_cost}
-    \begin{tabular}{lccc}
-        \toprule
-        \textbf{Method} & \textbf{Bits/Round} & \textbf{Compression} & \textbf{Accuracy Loss} \\
-        \midrule
-        Full gradient & 32M & 1$\times$ & 0\% \\
-        Top-1\% sparsification & 0.64M & 50$\times$ & 0.3\% \\
-        SignSGD + EF & 1M & 32$\times$ & 0.5\% \\
-        1-bit ADMM (ours) & 0.5M & 64$\times$ & 0.8\% \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsection{Self-Supervised Learning for DAS}
-
-\subsubsection{Contrastive Learning}
-
-Learning representations without labels using data augmentations \citep{yuan2024contrastive}:
-
-\begin{equation}
-    \mathcal{L}_{contrastive} = -\log \frac{\exp(\text{sim}(z_i, z_j)/\tau)}{\sum_{k \neq i} \exp(\text{sim}(z_i, z_k)/\tau)}
-    \end{equation}
-
-Effective augmentations for DAS:
-\begin{itemize}
-    \item Temporal shifts and crops
-    \item Channel dropout (simulating dead channels)
-    \item Additive noise injection
-    \item Time-frequency masking
-\end{itemize}
-
-\begin{lstlisting}[caption={Contrastive pre-training for DAS}]
-class DASContrastiveLearner:
-    def __init__(self, encoder, projector, temperature=0.1):
-        self.encoder = encoder
-        self.projector = projector
-        self.temp = temperature
-        self.augmentations = [
-            TemporalShift(max_shift=50),
-            ChannelDropout(p=0.1),
-            GaussianNoise(std=0.05),
-            FrequencyMask(max_width=10)
-        ]
-
-    def augment(self, x):
-        aug1, aug2 = x.clone(), x.clone()
-        for aug in self.augmentations:
-            if random.random() > 0.5:
-                aug1 = aug(aug1)
-            if random.random() > 0.5:
-                aug2 = aug(aug2)
-        return aug1, aug2
-
-    def loss(self, batch):
-        x1, x2 = self.augment(batch)
-        z1 = self.projector(self.encoder(x1))
-        z2 = self.projector(self.encoder(x2))
-        return nt_xent_loss(z1, z2, self.temp)
-\end{lstlisting}
-
-\subsubsection{Masked Autoencoder (MAE) for DAS}
-
-Inspired by vision MAE, masking portions of DAS data for self-supervised learning:
-
-\begin{equation}
-    \mathcal{L}_{MAE} = \frac{1}{|\mathcal{M}|} \sum_{(i,t) \in \mathcal{M}} \|x_{i,t} - \hat{x}_{i,t}\|^2
-    \end{equation}
-
-where $\mathcal{M}$ is the set of masked space-time positions.
-
-\subsection{Quantum-Inspired Optimization}
-
-\subsubsection{Variational Quantum Eigensolver for Inversion}
-
-Emerging quantum computing approaches for solving large-scale inverse problems:
-
-\begin{equation}
-    \min_{\boldsymbol{\theta}} \langle \psi(\boldsymbol{\theta}) | H | \psi(\boldsymbol{\theta}) \rangle
-    \end{equation}
-
-Current status (2025):
-\begin{itemize}
-    \item Proof-of-concept on small problems (100 parameters)
-    \item Hybrid classical-quantum algorithms showing promise
-    \item Potential for exponential speedup on specific subproblems
-\end{itemize}
-
-\subsection{Uncertainty Quantification with Conformal Prediction}
-
-Distribution-free uncertainty bounds for DAS predictions \citep{romano2024conformal}:
-
-\begin{equation}
-    \mathcal{C}(x) = \{y : s(x, y) \leq \hat{q}\}
-    \end{equation}
-
-where $\hat{q}$ is the $(1-\alpha)$ quantile of calibration scores, guaranteeing:
-\begin{equation}
-    P(Y \in \mathcal{C}(X)) \geq 1 - \alpha
-\end{equation}
-
-Applications:
-\begin{itemize}
-    \item Reliable detection confidence intervals
-    \item Risk-aware injection rate recommendations
-    \item Regulatory compliance with quantified uncertainty
-\end{itemize}
-
-% ============================================================================
-% 7. DISTRIBUTED AND FEDERATED LEARNING ARCHITECTURES
-% ============================================================================
-\section{Distributed and Federated Learning Architectures}
-\label{sec:distributed_processing}
-
-Given the immense data rates of DAS systems ($\sim$1 TB/day), transmitting all raw data to a central cloud server is increasingly impractical. We propose a decentralized processing architecture leveraging edge computing and federated learning.
-
-\subsection{Decentralized DAS Networks}
-
-In a large-scale CCS monitoring network (e.g., multiple injection wells, long transmission pipelines), we treat each DAS interrogator unit (IU) as an edge node in a graph $\mathcal{G} = (\mathcal{V}, \mathcal{E})$.
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[scale=0.8]
-        % Nodes
-        \node[circle, draw, fill=blue!20] (N1) at (0,0) {IU 1};
-        \node[circle, draw, fill=blue!20] (N2) at (4,0) {IU 2};
-        \node[circle, draw, fill=blue!20] (N3) at (2,3) {IU 3};
-        \node[circle, draw, fill=green!20] (Server) at (7,1.5) {Cloud};
-
-        % Edges
-        \draw[<->, thick] (N1) -- (N2);
-        \draw[<->, thick] (N2) -- (N3);
-        \draw[<->, thick] (N1) -- (N3);
-        \draw[->, dashed] (N2) -- (Server);
-        \draw[->, dashed] (N3) -- (Server);
-
-        % Labels
-        \node[below] at (2,-0.5) {Peer-to-Peer Consensus};
-        \node[right] at (5.5,1.5) {Model Updates};
-    \end{tikzpicture}
-    \caption{Distributed DAS network topology. Interrogators (IUs) perform local processing and share consensus variables or model updates, reducing bandwidth to the cloud.}
-    \label{fig:distributed_das}
-\end{figure}
-
-\subsection{Federated Learning for Privacy-Preserving Monitoring}
-
-Federated Learning (FL) allows collaborative training of event detection models without sharing raw seismic waveforms, which may be sensitive or proprietary. We implement the \texttt{FedAvg} algorithm:
-
-\begin{enumerate}
-    \item \textbf{Local Training}: Each node $k$ updates its model parameters $w_k$ using local data $\mathcal{D}_k$:
-    \begin{equation}
-        w_k^{t+1} = w_k^t - \eta \nabla F_k(w_k^t)
-    \end{equation}
-    \item \textbf{Aggregation}: The central server aggregates updates:
-    \begin{equation}
-        w_{global}^{t+1} = \sum_{k=1}^K \frac{|\mathcal{D}_k|}{|\mathcal{D}|} w_k^{t+1}
-    \end{equation}
-    \item \textbf{Broadcast}: Updated global parameters are sent back to nodes.
-\end{enumerate}
-
-This approach ensures that detection algorithms improve over time across the entire network while maintaining data privacy.
-
-\subsection{Consensus ADMM for Multi-Interrogator Arrays}
-
-For tasks like source localization that require coherent processing across arrays, we employ Consensus ADMM. We solve:
-
-\begin{equation}
-    \min_x \sum_{k=1}^K f_k(x)
-\end{equation}
-
-where $x$ is the global variable (e.g., event location) and $f_k$ is the local objective (e.g., travel-time misfit). The distributed ADMM updates are:
-
-\begin{align}
-    x_k^{t+1} &= \arg\min_{x_k} \left( f_k(x_k) + \frac{\rho}{2} ||x_k - z^t + u_k^t||_2^2 \right) \\
-    z^{t+1} &= \frac{1}{K} \sum_{k=1}^K (x_k^{t+1} + u_k^t) \\
-    u_k^{t+1} &= u_k^t + x_k^{t+1} - z^{t+1}
-\end{align}
-
-where $z$ acts as the consensus variable. This allows the network to converge on a global solution using only neighbor-to-neighbor communication.
-
-% ============================================================================
-% 8. DISCUSSION
+% 5. DISCUSSION
 % ============================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -2455,26 +1277,26 @@ Several research directions could enhance DAS-based monitoring:
 \end{enumerate}
 
 % ============================================================================
-% 9. CONCLUSIONS
+% 6. CONCLUSIONS
 % ============================================================================
 \section{Conclusions}
 \label{sec:conclusions}
 
-This report presented a comprehensive pipeline for processing Distributed Acoustic Sensing data with application to CO2 storage monitoring. Our main contributions include:
+This report presented a comprehensive pipeline for processing Distributed Acoustic Sensing (DAS) data with application to CO2 storage monitoring. The main verified outcomes in this repository are:
 
 \begin{enumerate}
-    \item \textbf{Real data demonstration}: Using actual seismic data from the 2019 Ridgecrest earthquake sequence, we showed that the processing workflow handles real-world data characteristics
+    \item \textbf{Real data demonstration (reproducible)}: We provide a complete processing workflow on the reproducible \texttt{porotomo\_sample} dataset (2000 channels, 60\,s at 1000\,Hz), including preprocessing, event detection, and diagnostic plots.
 
-    \item \textbf{Complete preprocessing pipeline}: We implemented bandpass filtering, SVD denoising, and F-K filtering, achieving 8 dB SNR improvement
+    \item \textbf{Quality control and diagnostics}: We report channel-level RMS diagnostics (dead/noisy channel checks) and spectral characterization (PSD comparison between noise and event windows) to justify preprocessing choices.
 
-    \item \textbf{Robust event detection}: The STA/LTA algorithm achieved 100\% detection rate for M $>$ 3.0 events with $<$ 5\% false positives
+    \item \textbf{Event detection}: A multi-channel STA/LTA detector identifies a set of candidate events (23 in the default configuration), and we quantify parameter sensitivity to highlight stable versus brittle operating regimes.
 
-    \item \textbf{Time-lapse analysis}: We demonstrated velocity change detection at the 1\% level, sufficient for CO2 plume monitoring
+    \item \textbf{Optimization-based denoising}: We demonstrate an ADMM-based TV-style denoiser on a real-data crop and compare it to an SVD baseline. The focus is on reproducibility, interpretability, and algorithmic traceability rather than overstated performance claims.
 
-    \item \textbf{Open-source implementation}: All code is available in a modular Python package for reproducibility
+    \item \textbf{Open-source implementation}: All code required to reproduce figures and metrics is included in this repository; the primary entry point is \texttt{examples/analysis\_real\_data\_report.py}.
 \end{enumerate}
 
-DAS technology represents a transformative capability for subsurface monitoring. As CCS deployment scales up globally, continuous fiber-optic sensing will play a critical role in ensuring safe and permanent CO2 storage.
+DAS technology represents a transformative capability for subsurface monitoring. As CCS deployment scales up globally, bringing \textbf{optimization-aware}, \textbf{distributed}, and \textbf{communication-efficient} methods into the DAS processing stack will be essential for reliable long-term CO2 storage assurance.
 
 % ============================================================================
 % REFERENCES
@@ -2777,12 +1599,13 @@ from das_co2_monitoring import (
     DASDataLoader,
     DASPreprocessor,
     EventDetector,
-    DASVisualizer
+    DASVisualizer,
+    download_sample_data,
 )
 
-# 1. Load data
-loader = DASDataLoader()
-loader.load_npz('data/real/ridgecrest_m71_das_array.npz')
+# 1. Load real dataset (reproducible sample bundle)
+npz_path = download_sample_data(dataset="porotomo_sample")
+loader = DASDataLoader().load_numpy(npz_path)
 
 print(f"Data shape: {loader.data.shape}")
 print(f"Duration: {loader.time[-1]:.1f} seconds")
@@ -2790,55 +1613,53 @@ print(f"Channels: {len(loader.distance)}")
 
 # 2. Preprocess
 preprocessor = DASPreprocessor(
-    sampling_rate=loader.sampling_rate
+    sampling_rate=loader.sampling_rate,
+    channel_spacing=1.0,
 )
 
 clean_data = (preprocessor
     .set_data(loader.data)
     .remove_mean()
     .remove_trend()
-    .bandpass_filter(1.0, 45.0)
-    .svd_denoise(n_components=20)
+    .bandpass_filter(2.0, 80.0)
+    .median_denoise(kernel_size=(1, 5))
     .normalize()
     .get_data())
 
 # 3. Detect events
 detector = EventDetector(
-    sampling_rate=loader.sampling_rate
+    sampling_rate=loader.sampling_rate,
+    channel_spacing=1.0,
 )
 
 events = detector.sta_lta_detect(
     clean_data,
-    sta_window=0.05,
+    sta_window=0.03,
     lta_window=0.5,
     trigger_on=3.0,
     trigger_off=1.5,
-    min_channels=10
+    min_channels=15,
+    min_duration=0.02,
 )
 
 print(f"Detected {len(events)} events")
-for event in events:
-    print(f"  Time: {event.time:.2f}s, "
-          f"Amplitude: {event.amplitude:.2e}")
 
 # 4. Visualize
 viz = DASVisualizer()
 
-# Waterfall plot
 fig1 = viz.waterfall_plot(
     clean_data,
     loader.time,
     loader.distance,
     events=events,
-    title="Ridgecrest M7.1 - DAS View"
+    title="Processed DAS sample (porotomo_sample)"
 )
 fig1.savefig('output/waterfall.png', dpi=150)
 
-# F-K spectrum
 fig2 = viz.fk_spectrum(
     clean_data,
     loader.sampling_rate,
-    channel_spacing=100.0,
+    channel_spacing=1.0,
     title="F-K Spectrum"
 )
 fig2.savefig('output/fk_spectrum.png', dpi=150)
@@ -2846,7 +1667,7 @@ fig2.savefig('output/fk_spectrum.png', dpi=150)
 print("Processing complete!")
 \end{lstlisting}
 
-\section{Mathematical Derivations}
+\subsection{Mathematical Derivations}
 \label{app:derivations}
 
 \subsection{Derivation of DAS Response Function}

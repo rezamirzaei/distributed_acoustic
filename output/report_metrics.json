@@ -1,0 +1,57 @@
+{
+  "dataset": "porotomo_sample",
+  "n_channels": 2000,
+  "n_samples": 60000,
+  "sampling_rate_hz": 1000.0,
+  "channel_spacing_m": 1.0,
+  "gauge_length_m": 10.0,
+  "events_detected": 23,
+  "qc_dead_channels": 0,
+  "qc_noisy_channels": 0,
+  "denoise_crop_channels": [
+    700,
+    900
+  ],
+  "denoise_crop_seconds": [
+    5.0,
+    25.0
+  ],
+  "denoise_metric_note": "SNR evaluated on first 40 channels of the comparison crop (700:740), ensuring TV/ADMM is computed on the same subset.",
+  "snr_db_baseline": -0.22365006625815084,
+  "snr_db_svd": -0.4113827787746386,
+  "snr_db_tv_admm": -0.26946325198671445,
+  "stalta_sensitivity": {
+    "note": "Computed on downsampled subset for speed (every 10th channel, first 20s)",
+    "sta_window_s": [
+      0.02,
+      0.03,
+      0.05
+    ],
+    "trigger_on": [
+      2.5,
+      3.0,
+      3.5,
+      4.0
+    ],
+    "counts": [
+      [
+        27,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        1
+      ]
+    ]
+  }
+}

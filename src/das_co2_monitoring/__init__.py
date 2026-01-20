@@ -21,6 +21,7 @@ from .event_detection import EventDetector
 from .monitoring import CO2Monitor, MonitoringResult
 from .optimization import ADMMOptimizer, ConsensusADMM
 from .federated import FederatedSimulation, FederatedDASNode
+from .visualization import DASVisualizer
 
 __version__ = "0.1.0"
 __author__ = "DAS Research Team"
@@ -35,6 +36,7 @@ __all__ = [
     "ConsensusADMM",
     "FederatedSimulation",
     "FederatedDASNode",
+    "DASVisualizer",
     "download_sample_data",
     "dataset_path",
     "ensure_real_datasets",

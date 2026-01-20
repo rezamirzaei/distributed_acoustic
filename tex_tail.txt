@@ -1,0 +1,10 @@
+\subsection{Residuals and Stopping Criteria}
+
+Define the primal residual $\mathbf{r}^k = \mathbf{D}\mathbf{x}^k - \mathbf{z}^k$ and dual residual $\mathbf{s}^k = \rho \mathbf{D}^T (\mathbf{z}^k - \mathbf{z}^{k-1})$. Practical stopping uses:
+\begin{equation}
+    ||\mathbf{r}^k||_2 \leq \varepsilon_{pri},\quad ||\mathbf{s}^k||_2 \leq \varepsilon_{dual}
+\end{equation}
+
+With TV denoising, the quadratic data term is strongly convex, improving stability and often giving linear convergence in practice under standard assumptions.
+
+\end{document}
