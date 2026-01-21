@@ -294,16 +294,16 @@ This report aims to:
 
 This report is organized as follows:
 \begin{itemize}
-    \item \textbf{Section 2} provides the theoretical background on fiber optics, Rayleigh scattering, and seismic wave propagation
+    \item \textbf{Section 2} provides the theoretical background on fiber optics, Rayleigh scattering, seismic wave propagation, and optimization foundations (ADMM)
     \item \textbf{Section 3} describes the real-world data sources used in this study
-    \item \textbf{Section 4} presents the complete methodology for data processing
-    \item \textbf{Section 5} details the software implementation
-    \item \textbf{Section 6} presents experimental results and analysis
-    \item \textbf{Section 7} discusses case studies from operational CCS projects
-    \item \textbf{Section 8} covers advanced machine learning methods
-    \item \textbf{Section 9} provides discussion and future directions
-    \item \textbf{Section 10} concludes the report
+    \item \textbf{Section 4} presents the complete methodology for data processing, including optimization-based denoising
+    \item \textbf{Section 5} details the software implementation and key algorithm classes
+    \item \textbf{Section 6} presents experimental results and analysis on real data
+    \item \textbf{Section 7} provides discussion, comparison with conventional methods, and future directions
+    \item \textbf{Section 8} concludes the report
 \end{itemize}
+
+The \textbf{Appendices} contain installation guides, data format specifications, complete code examples, mathematical derivations, and a detailed analysis of federated learning communication complexity.
 
 % ============================================================================
 % 2. THEORETICAL BACKGROUND
@@ -1195,7 +1195,7 @@ A production monitoring system must show that detection performance is stable to
 \end{figure}
 
 % ============================================================================
-% 5. DISCUSSION
+% 7. DISCUSSION
 % ============================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -1277,7 +1277,7 @@ Several research directions could enhance DAS-based monitoring:
 \end{enumerate}
 
 % ============================================================================
-% 6. CONCLUSIONS
+% 8. CONCLUSIONS
 % ============================================================================
 \section{Conclusions}
 \label{sec:conclusions}
