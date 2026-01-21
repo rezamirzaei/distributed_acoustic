@@ -311,15 +311,15 @@ def main() -> int:
     # ------------------------------------------------------------------
     print("[analysis] STA/LTA sensitivity sweep (downsampled)...")
 
-    # Downsample channels/time so the sweep finishes quickly.
-    ch_ds = slice(0, data_proc.shape[0], 10)  # 200 channels
-    t_ds = slice(0, int(20 * fs))  # 20 seconds
+    # Use more data for a more informative sensitivity analysis
+    ch_ds = slice(0, data_proc.shape[0], 5)  # 400 channels (every 5th)
+    t_ds = slice(0, int(40 * fs))  # 40 seconds
     data_small = data_proc[ch_ds, t_ds]
 
-    det_small = EventDetector(sampling_rate=fs, channel_spacing=loader.channel_spacing * 10)
+    det_small = EventDetector(sampling_rate=fs, channel_spacing=loader.channel_spacing * 5)
 
-    sta_vals = [0.02, 0.03, 0.05]
-    trig_vals = [2.5, 3.0, 3.5, 4.0]
+    sta_vals = [0.02, 0.03, 0.05, 0.08]
+    trig_vals = [2.0, 2.5, 3.0, 3.5, 4.0]
 
     counts = np.zeros((len(sta_vals), len(trig_vals)), dtype=int)
     for i, sta in enumerate(sta_vals):
@@ -330,7 +330,7 @@ def main() -> int:
                 lta_window=0.5,
                 trigger_on=trig,
                 trigger_off=max(1.2, 0.5 * trig),
-                min_channels=max(5, int(0.08 * data_small.shape[0])),
+                min_channels=max(3, int(0.05 * data_small.shape[0])),
                 min_duration=0.02,
             )
             counts[i, j] = len(ev)
@@ -353,7 +353,7 @@ def main() -> int:
     plt.close(fig)
 
     metrics["stalta_sensitivity"] = {
-        "note": "Computed on downsampled subset for speed (every 10th channel, first 20s)",
+        "note": "Computed on downsampled subset for speed (every 5th channel, first 40s)",
         "sta_window_s": sta_vals,
         "trigger_on": trig_vals,
         "counts": counts.tolist(),

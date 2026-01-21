@@ -21,13 +21,15 @@
   "snr_db_svd": -0.4113827787746386,
   "snr_db_tv_admm": -0.26946325198671445,
   "stalta_sensitivity": {
-    "note": "Computed on downsampled subset for speed (every 10th channel, first 20s)",
+    "note": "Computed on downsampled subset for speed (every 5th channel, first 40s)",
     "sta_window_s": [
       0.02,
       0.03,
-      0.05
+      0.05,
+      0.08
     ],
     "trigger_on": [
+      2.0,
       2.5,
       3.0,
       3.5,
@@ -35,18 +37,28 @@
     ],
     "counts": [
       [
-        27,
+        1,
+        492,
+        34,
+        1,
+        1
+      ],
+      [
+        11,
+        89,
+        3,
+        1,
+        1
+      ],
+      [
+        222,
+        9,
         1,
         1,
         1
       ],
       [
-        1,
-        1,
-        1,
-        1
-      ],
-      [
+        16,
         1,
         1,
         1,
