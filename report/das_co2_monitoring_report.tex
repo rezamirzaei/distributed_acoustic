@@ -297,18 +297,20 @@ DAS systems measure either the strain ($\epsilon$) or strain rate ($\dot{\epsilo
 The relationship between the measured optical phase change ($\Delta\phi$) and strain is:
 
 \begin{equation}
-    \Delta\phi = \frac{4\pi n L_g}{\lambda} \left(1 - \frac{n^2}{2}[p_{12} - \nu(p_{11} + p_{12})]\right) \epsilon
+    \Delta\phi = \frac{4\pi n L_g}{\lambda} \underbrace{\left(1 - \frac{n^2}{2}\left[p_{12} - \nu(p_{11} + p_{12})\right]\right)}_{\text{photoelastic correction } \approx 0.78} \epsilon
     \label{eq:phase_strain}
 \end{equation}
 
 where:
 \begin{itemize}
-    \item $n$ is the refractive index of the fiber core
+    \item $n \approx 1.468$ is the refractive index of the fiber core
     \item $L_g$ is the gauge length (spatial resolution)
-    \item $\lambda$ is the laser wavelength
-    \item $p_{11}, p_{12}$ are the photoelastic coefficients
-    \item $\nu$ is Poisson's ratio of the fiber
+    \item $\lambda \approx 1550$ nm is the laser wavelength
+    \item $p_{11} \approx 0.121$, $p_{12} \approx 0.270$ are the photoelastic coefficients for silica
+    \item $\nu \approx 0.17$ is Poisson's ratio of the fiber
 \end{itemize}
+
+The photoelastic term accounts for the change in refractive index due to strain, which reduces the effective sensitivity by approximately 22\% compared to a naive geometric estimate.
 
 For seismic applications, DAS effectively measures the particle velocity gradient along the fiber axis:
 
@@ -457,7 +459,7 @@ Surface waves are confined to the Earth's surface:
 
 \textbf{Rayleigh waves} have elliptical particle motion. A commonly used empirical approximation for Poisson's ratios typical of sedimentary rocks is:
 \begin{equation}
-    V_R \approx \frac{0.87 + 1.12\nu}{1 + \nu} V_S
+    V_R \approx \left(\frac{0.87 + 1.12\nu}{1 + \nu}\right) V_S
     \label{eq:rayleigh_wave}
 \end{equation}
 
@@ -659,7 +661,9 @@ For example, in TV denoising ($\min_\mathbf{x} \frac{1}{2}||\mathbf{y} - \mathbf
 
 This study uses \textbf{real-world field-parameter DAS sample data} shipped/downloaded with this repository under \texttt{data/real/} via the helper function \texttt{download\_sample\_data(dataset="porotomo\_sample")}. The sample bundle is configured with acquisition parameters representative of a PoroTomo-style deployment (kHz sampling, meter-scale channel spacing, finite gauge length), and is used here to provide a \textbf{fully reproducible} processing and evaluation pipeline.
 
-\textbf{Why a sample bundle?} Public raw DAS repositories often distribute multi-GB to multi-TB HDF5/TDMS holdings (which is excellent for research but impractical to ship inside an application package). This project therefore provides a compact, verifiable sample bundle with real acquisition geometry metadata to demonstrate end-to-end processing.
+\textbf{Data provenance:} The PoroTomo project was a 2016 DOE-funded field experiment at Brady Hot Springs, Nevada. The sample bundle used here preserves realistic acquisition geometry from that deployment while serving as a compact, verifiable stand-in for larger public DAS archives.
+
+\textbf{Why a sample bundle?} Public raw DAS repositories often distribute multi-GB to multi-TB HDF5/TDMS holdings (which is excellent for research but impractical to ship inside an application package). This project therefore provides a compact sample bundle with real acquisition geometry metadata to demonstrate end-to-end processing.
 
 \subsection{Dataset Parameters}
 
@@ -683,6 +687,20 @@ The dataset used in this report has the following parameters (automatically read
         \bottomrule
     \end{tabular}
 \end{table}
+
+\subsubsection{Note on Spatial Oversampling}
+
+The dataset uses a 10\,m gauge length with 1\,m channel spacing, which means \textbf{adjacent channels are not independent measurements}---they are spatially oversampled with significant overlap. Each channel effectively averages strain over a 10\,m window, but centers are spaced only 1\,m apart.
+
+\textit{Implications for processing:}
+\begin{itemize}
+    \item Adjacent channels exhibit high spatial correlation by design
+    \item SVD and TV denoising methods exploit this coherence for noise suppression
+    \item Effective spatial resolution is limited by gauge length ($\sim$10\,m), not channel spacing
+    \item This oversampling is common in operational DAS deployments to improve SNR
+\end{itemize}
+
+The processing pipeline in this report accounts for this correlation structure: SVD extracts spatially coherent modes, and TV denoising enforces piecewise smoothness consistent with the underlying physics.
 
 \subsection{Data Structure}
 
@@ -1863,9 +1881,11 @@ where $\beta = \min(m,n)/\max(m,n)$.
 
 \subsection{Federated Learning for DAS}
 
-In a federated learning setup, multiple clients (e.g., DAS units at different sites) train a model collaboratively while keeping their data local. Only model updates are shared with a central server:
+In a federated learning setup, multiple clients (e.g., DAS units at different sites) train a model collaboratively while keeping their data local. Only model updates are shared with a central server.
 
-\begin{lstlisting}[caption={Federated learning pseudocode}]
+\noindent\textit{Note: The following is conceptual pseudocode illustrating the federated architecture design, not executable implementation code.}
+
+\begin{lstlisting}[caption={Federated learning pseudocode (design proposal)}]
 # Server-side
 global_model = initialize_model()
 
@@ -1931,6 +1951,20 @@ The compression ratio is:
 \end{equation}
 
 This massive reduction enables continuous monitoring over limited bandwidth links (e.g., satellite or cellular) typical in remote CCS fields.
+
+\subsubsection{Regulatory and Practical Considerations}
+
+\textit{Important caveat:} While the bandwidth savings are compelling, real-world safety-critical CO2 monitoring operations face additional constraints:
+
+\begin{itemize}
+    \item \textbf{Regulatory requirements:} Many jurisdictions require ``human-in-the-loop'' verification of raw waveforms for critical events (potential leakage, significant seismicity). A system transmitting only model weights may not meet current regulatory standards for verifiable monitoring.
+
+    \item \textbf{Hybrid architectures:} A practical deployment would likely use a tiered approach: (1) continuous local processing with FL-based anomaly detection, (2) selective raw waveform transmission for flagged events, and (3) periodic bulk transfers for archival and audit purposes.
+
+    \item \textbf{Liability and auditability:} Operators may need to retain raw data locally even if not transmitted, to support post-incident analysis and regulatory audits.
+\end{itemize}
+
+The FL architecture presented here is a \textbf{design proposal} for bandwidth-constrained scenarios, not a complete regulatory-compliant system. Integration with existing monitoring frameworks and regulatory consultation would be required for operational deployment.
 
 \subsection{Convergence Analysis of ADMM}
 \label{app:admm_convergence}
@@ -2040,5 +2074,56 @@ In our DAS denoising application with $n \approx 60{,}000$ samples:
 \end{itemize}
 
 The linear convergence rate and $O(n)$ per-iteration cost make ADMM highly efficient for large-scale DAS signal processing, enabling real-time denoising of streaming data.
+
+\section{Technical Notes and Assumptions}
+\label{app:technical_notes}
+
+This appendix documents key technical assumptions and implementation details for transparency.
+
+\subsection{Implementation Status}
+
+\begin{table}[H]
+    \centering
+    \caption{Implementation status of pipeline components}
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Component} & \textbf{Status} & \textbf{Notes} \\
+        \midrule
+        Data loading (NPZ/HDF5) & Concrete & Fully implemented \\
+        Bandpass filtering & Concrete & Uses scipy.signal \\
+        F-K filtering & Concrete & Uses numpy.fft \\
+        SVD denoising & Concrete & Uses numpy.linalg \\
+        TV denoising (ADMM) & Concrete & Custom implementation \\
+        STA/LTA detection & Concrete & Custom implementation \\
+        Federated Learning & \textbf{Conceptual} & Design proposal only \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The Federated Learning components (Listings in Appendix D) are \textbf{pseudocode} illustrating the architectural design. Unlike the signal processing code (which uses concrete scipy/numpy implementations), the FL code uses placeholder methods and would require a deep learning backend (PyTorch/TensorFlow) for operational deployment.
+
+\subsection{Key Assumptions}
+
+\begin{enumerate}
+    \item \textbf{Isotropic media:} Rock physics equations (Gassmann, $V_P/V_S$ relations) assume isotropic elasticity. Real reservoirs exhibit anisotropy that affects wave velocities.
+
+    \item \textbf{Plane-wave approximation:} The strain-rate to particle-velocity relation (Eq.~\ref{eq:strain_velocity_plane}) assumes 1D plane-wave propagation along the fiber.
+
+    \item \textbf{Convex optimization:} ADMM convergence guarantees assume convex objectives with exact subproblem solves; practical implementations use finite-precision arithmetic.
+
+    \item \textbf{Spatial oversampling:} The dataset's 10\,m gauge length with 1\,m channel spacing creates correlated channels (see Section~\ref{sec:data}).
+\end{enumerate}
+
+\subsection{Validation Approach}
+
+The pipeline is validated through:
+\begin{itemize}
+    \item \textbf{Reproducibility:} All figures generated from the same sample data via \texttt{analysis\_real\_data\_report.py}
+    \item \textbf{Parameter sensitivity:} STA/LTA detector validated across parameter grid (Figure~\ref{fig:report_stalta_sens})
+    \item \textbf{Spectral consistency:} PSD comparisons between noise and event windows (Figure~\ref{fig:report_psd})
+    \item \textbf{Visual QC:} Waterfall plots and F-K spectra for sanity checking
+\end{itemize}
+
+This approach prioritizes transparency and reproducibility over performance claims on benchmark datasets.
 
 \end{document}
