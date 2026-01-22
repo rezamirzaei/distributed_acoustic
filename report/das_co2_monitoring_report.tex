@@ -66,6 +66,8 @@
 \fancyhf{}
 \rhead{DAS for CO2 Storage Monitoring}
 \lhead{\leftmark}
+\lfoot{\small Reza Mirzaeifard, Ph.D.}
+\rfoot{\small January 2026}
 \cfoot{\thepage}
 % Fix fancyhdr warning about headheight
 \setlength{\headheight}{14.5pt}
@@ -76,6 +78,10 @@
 % TITLE PAGE
 % ============================================================================
 \begin{document}
+
+% Disable hyperref page anchors on front matter to avoid duplicate page destination warnings.
+\hypersetup{pageanchor=false}
+\pagenumbering{roman}
 
 \begin{titlepage}
     \centering
@@ -120,12 +126,22 @@
 
     \vspace{1cm}
 
+    {\Large\bfseries Reza Mirzaeifard, Ph.D.}
+
+    \vspace{0.3cm}
+    {\normalsize Optimization \& Machine Learning Researcher}
+
+    \vspace{0.3cm}
+    {\small \textit{Expertise: ADMM, Federated Learning, Decentralized Optimization, Signal Processing}}
+
+    \vspace{1cm}
+
     {\large January 2026}
 
     \vfill
 
     \begin{abstract}
-    \noindent This report presents a comprehensive analysis of Distributed Acoustic Sensing (DAS) technology applied to Carbon Dioxide (CO2) storage monitoring. We demonstrate an end-to-end data processing pipeline from raw DAS array recordings through signal conditioning, event detection, and monitoring-oriented diagnostic analyses. Special emphasis is placed on addressing the ``Big Data'' challenges of DAS through \textbf{advanced optimization frameworks} and \textbf{decentralized computing architectures}. We introduce an optimization view of robust signal recovery via \textbf{ADMM} and discuss how \textbf{federated/decentralized learning} can reduce bandwidth requirements in multi-site monitoring.
+    \noindent This report presents a comprehensive analysis of Distributed Acoustic Sensing (DAS) technology applied to Carbon Dioxide (CO2) storage monitoring. We demonstrate an end-to-end data processing pipeline from raw DAS array recordings through signal conditioning, event detection, and monitoring-oriented diagnostic analyses. Special emphasis is placed on addressing the \textbf{high-volume streaming data} challenges of DAS through \textbf{advanced optimization frameworks} and \textbf{decentralized computing architectures}. We introduce an optimization view of robust signal recovery via \textbf{ADMM} and discuss how \textbf{federated/decentralized learning} can reduce bandwidth requirements in multi-site monitoring.
 
     \vspace{0.7em}
     \noindent\textbf{Reproducible real-data basis:} All figures and quantitative results in this report are generated from the repository's reproducible real-data sample bundle (\texttt{porotomo\_sample}) using \texttt{examples/analysis\_real\_data\_report.py}. The dataset includes realistic acquisition geometry metadata (kHz sampling, meter-scale channel spacing, finite gauge length) and serves as a compact, verifiable stand-in for larger public DAS archives.
@@ -145,39 +161,60 @@
 % ============================================================================
 % EXECUTIVE SUMMARY
 % ============================================================================
-\newpage
+\clearpage
 \thispagestyle{empty}
-\section*{Executive Summary: Relevance to Advanced Monitoring Systems}
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
 
-This technical report serves as a demonstration of expertise relevant to next-generation Distributed Acoustic Sensing (DAS) systems for CO2 storage monitoring. It bridges the gap between fundamental geophysical signal processing and cutting-edge \textbf{distributed optimization} and \textbf{machine learning} techniques.
+\noindent\textbf{Author:} Reza Mirzaeifard, Ph.D.
+
+\vspace{0.5em}
+\noindent This technical report presents a modern DAS processing pipeline that bridges fundamental geophysical signal processing with \textbf{distributed optimization} and \textbf{machine learning} techniques relevant to operational CO2 storage monitoring.
 
 \subsection*{Problem Statement}
-Continuous monitoring of CO2 storage sites using DAS generates massive data volumes ($\sim$1 TB/day), creating bottlenecks in transmission, storage, and centralized processing. Traditional methods often rely on simple stacking or filtering, which may fail to capture subtle precursor signals of leakage or induced seismicity in noisy environments.
+Continuous monitoring of CO2 storage sites using DAS generates high data volumes ($\sim$1 TB/day), creating bottlenecks in transmission, storage, and centralized processing. Traditional methods often rely on simple stacking or filtering, which may fail to capture subtle precursor signals of leakage or induced seismicity in noisy environments.
 
-\subsection*{Proposed Solution \& Expertise Demonstrated}
-This work implements a modern processing architecture that leverages my research background in \textbf{non-convex optimization} and \textbf{decentralized learning}:
+\subsection*{Technical Approach}
+This work implements a processing architecture combining classical signal processing with optimization-based methods:
 
 \begin{enumerate}
     \item \textbf{Robust Signal Recovery via ADMM}:
-    Instead of relying only on classical filtering, we formulate denoising as a regularized inverse problem. A TV-style denoiser is solved using an \textbf{ADMM} splitting strategy (Section \ref{sec:methodology}), consistent with my PhD research on smoothing ADMM for non-smooth penalties.
+    Denoising is formulated as a regularized inverse problem. A TV-style denoiser is solved using an \textbf{ADMM} splitting strategy (Section~\ref{sec:methodology}), which preserves sharp arrivals while suppressing noise.
 
     \item \textbf{Decentralized \& Federated Architecture}:
-    To address data transfer constraints, we outline a Federated Learning/edge-processing architecture (see Section \ref{app:fl_complexity}) where interrogator nodes compute local features or local model updates and share only compressed summaries (not raw waveforms).
+    To address data transfer constraints, we outline a Federated Learning/edge-processing architecture (see Appendix~\ref{app:fl_complexity}) where interrogator nodes compute local features or model updates and share only compressed summaries.
 
     \item \textbf{Real-Data Validation}:
-    All figures and metrics are generated from the repository's \textbf{real-data sample bundle} (\texttt{porotomo\_sample}) in a fully reproducible manner (see Section \ref{sec:data} and the Reproducibility Notes).
+    All figures and metrics are generated from the repository's \textbf{real-data sample bundle} (\texttt{porotomo\_sample}) in a fully reproducible manner (see Section~\ref{sec:data}).
 \end{enumerate}
 
-\subsection*{Alignment with Research Goals}
-This implementation highlights the potential for integrating advanced mathematical optimization (e.g., smoothing proximal gradients, consensus ADMM) directly into geophysical monitoring workflows. It demonstrates not just "using" tools, but \textbf{designing} the underlying algorithms for robustness, scalability, and automated anomaly detection in critical infrastructure.
+\subsection*{Key Technical Contributions}
+The core challenges in operational DAS-based CO2 storage monitoring are not only geophysical, but also \textbf{computational}: high-throughput streaming data, limited bandwidth from remote sites, nonstationary noise, and the need for reliable automated detection.
 
-\newpage
+\textbf{Optimization-based denoising.} The pipeline includes an ADMM-based TV denoiser with:
+\begin{itemize}
+    \item denoising and feature extraction framed as \textbf{inverse problems} with explicit regularization;
+    \item a transparent implementation on real DAS data crops, including convergence analysis (Appendix~\ref{app:admm_convergence});
+    \item design choices that extend naturally to \textbf{large-scale} and \textbf{distributed} settings.
+\end{itemize}
+
+\textbf{Scalable architecture design.} Modern CCS monitoring deployments involve multiple interrogators/sites and restrictive data-transfer policies. Appendix~\ref{app:fl_complexity} provides a communication-complexity analysis showing how edge nodes can transmit \textit{compressed features or model updates} rather than raw waveforms.
+
+\textbf{Robustness validation.} DAS data is routinely contaminated by coupling changes, traffic, pump noise, and intermittent artifacts. The pipeline includes channel QC, noise-vs-event PSD comparisons, and detector sensitivity analysis (Section~\ref{sec:results}).
+
+\textbf{Reproducibility.} All figures and metrics are generated from a reproducible real-data sample bundle via \texttt{examples/analysis\_real\_data\_report.py}.
+
+\clearpage
 
 % ============================================================================
 % TABLE OF CONTENTS
 % ============================================================================
 \tableofcontents
-\newpage
+\clearpage
+
+% Enable page anchors for the main content and reset page numbering.
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
 
 % ============================================================================
 % 1. INTRODUCTION
@@ -187,7 +224,7 @@ This implementation highlights the potential for integrating advanced mathematic
 
 \subsection{Background and Motivation}
 
-Climate change mitigation requires large-scale deployment of Carbon Capture and Storage (CCS) technology. Geological sequestration of CO2 in depleted oil and gas reservoirs, saline aquifers, and unmineable coal seams offers a promising pathway to reduce atmospheric greenhouse gas concentrations \citep{metz2005ipcc}. However, ensuring the long-term safety and permanence of stored CO2 requires robust monitoring systems capable of detecting:
+Climate change mitigation requires large-scale deployment of Carbon Capture and Storage (CCS) technology. Geological sequestration of CO2 in depleted oil and gas reservoirs, saline aquifers, and unmineable coal seams offers a promising pathway to reduce atmospheric greenhouse gas concentrations~\cite{metz2005ipcc}. However, ensuring the long-term safety and permanence of stored CO2 requires robust monitoring systems capable of detecting:
 
 \begin{itemize}
     \item Induced microseismicity from injection operations
@@ -250,12 +287,14 @@ The key advantages of DAS include:
     \item \textbf{Continuous coverage}: No gaps between sensors
     \item \textbf{Cost-effective}: Uses existing telecommunications infrastructure
     \item \textbf{Harsh environment operation}: No downhole electronics required
-    \item \textbf{Real-time monitoring}: Continuous data acquisition capability
+    \item \textbf{Near-real-time capable}: Continuous data acquisition with potential for streaming implementations
 \end{enumerate}
 
 \subsection{DAS Measurement Physics}
 
-DAS systems measure the strain rate ($\dot{\epsilon}$) or strain ($\epsilon$) along the fiber. The relationship between the measured optical phase change ($\Delta\phi$) and strain is:
+DAS systems measure either the strain ($\epsilon$) or strain rate ($\dot{\epsilon}$) along the fiber, depending on the interrogator design. Modern phase-sensitive systems typically output strain or strain rate; older intensity-based systems output a related but uncalibrated quantity. \textbf{Note:} The sample data used in this report represents strain-rate-like quantities (arbitrary units after preprocessing), which is typical for seismic DAS applications.
+
+The relationship between the measured optical phase change ($\Delta\phi$) and strain is:
 
 \begin{equation}
     \Delta\phi = \frac{4\pi n L_g}{\lambda} \left(1 - \frac{n^2}{2}[p_{12} - \nu(p_{11} + p_{12})]\right) \epsilon
@@ -307,6 +346,7 @@ This report is organized as follows:
 
 The \textbf{Appendices} contain installation guides, data format specifications, complete code examples, mathematical derivations, and a detailed analysis of federated learning communication complexity.
 
+\newpage
 % ============================================================================
 % 2. THEORETICAL BACKGROUND
 % ============================================================================
@@ -397,7 +437,7 @@ Seismic body waves propagate through the Earth's interior:
 
 where $K$ is bulk modulus, $\mu$ is shear modulus, $\lambda$ is Lam\'e's first parameter, and $\rho$ is density.
 
-The $V_P/V_S$ ratio is a key indicator of fluid content:
+The $V_P/V_S$ ratio is a key indicator of fluid content in isotropic elastic media:
 \begin{equation}
     \frac{V_P}{V_S} = \sqrt{\frac{K/\mu + 4/3}{1}} = \sqrt{\frac{2(1-\nu)}{1-2\nu}}
     \label{eq:vp_vs_ratio}
@@ -409,11 +449,13 @@ where $\nu$ is Poisson's ratio. For typical sedimentary rocks:
     \item CO2-saturated: $V_P/V_S \approx 1.6$--$1.7$
 \end{itemize}
 
+\noindent\textit{Caveat:} In practice, $V_P/V_S$ changes are non-unique indicators of fluid substitution; anisotropy, stress changes, and cementation can produce similar effects. Multi-attribute analysis is typically required for robust interpretation.
+
 \subsubsection{Surface Waves}
 
 Surface waves are confined to the Earth's surface:
 
-\textbf{Rayleigh waves} have elliptical particle motion:
+\textbf{Rayleigh waves} have elliptical particle motion. A commonly used empirical approximation for Poisson's ratios typical of sedimentary rocks is:
 \begin{equation}
     V_R \approx \frac{0.87 + 1.12\nu}{1 + \nu} V_S
     \label{eq:rayleigh_wave}
@@ -431,11 +473,17 @@ The scalar wave equation in 1D is:
 
 For DAS, we measure strain rate, which is related to particle velocity:
 \begin{equation}
-    \dot{\epsilon}_{xx} = \frac{\partial v_x}{\partial x} = -\frac{1}{c}\frac{\partial v_x}{\partial t}
+    \dot{\epsilon}_{xx} = \frac{\partial v_x}{\partial x}
     \label{eq:strain_velocity}
 \end{equation}
 
-This shows that DAS response depends on the apparent velocity $c$ of the wave along the fiber.
+For a 1D plane wave propagating along the fiber with constant apparent velocity $c$, this simplifies to:
+\begin{equation}
+    \dot{\epsilon}_{xx} = -\frac{1}{c}\frac{\partial v_x}{\partial t}
+    \label{eq:strain_velocity_plane}
+\end{equation}
+
+This relation shows that DAS response depends on the apparent velocity $c$ of the wave along the fiber, and explains why DAS amplitude varies with incidence angle.
 
 \subsection{Rock Physics of CO2-Saturated Rocks}
 
@@ -600,6 +648,7 @@ where $L_\rho$ is the augmented Lagrangian. This approach is highly effective fo
 
 For example, in TV denoising ($\min_\mathbf{x} \frac{1}{2}||\mathbf{y} - \mathbf{x}||_2^2 + \lambda ||\nabla \mathbf{x}||_1$), ADMM splits the data fidelity term ($f(\mathbf{x})$) and the regularization term ($g(\mathbf{z})$) by introducing the constraint $\mathbf{z} = \mathbf{D}\mathbf{x}$. The $\mathbf{x}$-update becomes a linear system solve, and the $\mathbf{z}$-update is a simple soft-thresholding operation.
 
+\newpage
 % ============================================================================
 % 3. DATA DESCRIPTION
 % ============================================================================
@@ -658,6 +707,7 @@ porotomo_sample.npz
 %   examples/analysis_real_data_report.py
 % (outputs saved under output/report_*.png and output/report_metrics.json)
 
+\newpage
 % ============================================================================
 % METHODOLOGY
 % ============================================================================
@@ -762,7 +812,7 @@ where $\mathbf{Y}$ is the noisy DAS data, $\mathbf{X}$ is the recovered signal, 
     \item \textbf{Dual update (u)}: Simple arithmetic update.
 \end{enumerate}
 
-This method outperforms SVD in preserving non-orthogonal wavefield components and handling spatially aliased data.
+This method complements SVD by explicitly encoding piecewise-smooth structure; in practice, TV/ADMM often preserves sharp arrivals under nonstationary noise, while SVD is effective at extracting spatially coherent components.
 
 \subsubsection{F-K Filtering}
 
@@ -908,6 +958,7 @@ We detect the plume boundary by thresholding velocity changes:
 
 where $\theta \approx 1$--$2\%$ is the detection threshold.
 
+\newpage
 % ============================================================================
 % 4. IMPLEMENTATION
 % ============================================================================
@@ -976,12 +1027,15 @@ class DASPreprocessor:
 
     def get_data(self):
         return self.data
+
+    # Additional methods: remove_mean(), remove_trend(),
+    # median_denoise(), normalize() omitted for brevity
 \end{lstlisting}
 
 Usage example:
 
 \begin{lstlisting}[caption={Fluent preprocessing pipeline}]
-preprocessor = DASPreprocessor(sampling_rate=100.0)
+preprocessor = DASPreprocessor(sampling_rate=1000.0)
 clean_data = (preprocessor
     .set_data(raw_data)
     .remove_mean()
@@ -1128,6 +1182,7 @@ The implementation relies on standard scientific Python libraries:
     \end{tabular}
 \end{table}
 
+\newpage
 % ============================================================================
 % RESULTS
 % ============================================================================
@@ -1140,17 +1195,25 @@ All figures in this section are generated by the reproducible script \texttt{exa
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{report_waterfall.png}
+    \includegraphics[width=\textwidth]{report_waterfall}
     \caption{Waterfall plot of the processed real-data sample (bandpass 2--80 Hz, median denoise, per-channel standardization). Detected events (STA/LTA) are annotated as vertical markers.}
     \label{fig:report_waterfall}
 \end{figure}
 
+\noindent\textbf{Interpretation.} The waterfall visualization is the most direct sanity check for a DAS pipeline: coherent arrivals appear as sloping moveout patterns across distance, while incoherent noise appears as spatially uncorrelated speckle. The vertical markers indicate automatically detected candidate events; in practice, these can be used to build an event catalog for review, location, and time-lapse comparison.
+
+\noindent\textbf{Takeaway.} A reproducible waterfall plot provides a fast ``human-in-the-loop'' QA step and also serves as an input to automated downstream steps (event detection, template matching, and time-windowed QC metrics).
+
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{report_fk.png}
+    \includegraphics[width=0.95\textwidth]{report_fk}
     \caption{F-K spectrum of the processed real-data sample with reference apparent-velocity lines. Energy concentrations are interpretable as coherent wavefield components and coherent noise.}
     \label{fig:report_fk}
 \end{figure}
+
+\noindent\textbf{Interpretation.} In the $(f,k)$ domain, coherent wave types separate by apparent velocity (slope). Concentrated energy near low apparent velocity is often associated with surface noise (traffic/wind) or other slowly propagating disturbances. Higher apparent velocities are consistent with body-wave energy. This diagnostic directly motivates velocity-selective filtering (F-K masks) and provides a quantitative way to justify preprocessing choices.
+
+\noindent\textbf{Takeaway.} F-K analysis is both a diagnostic and a design tool: it helps distinguish signal from coherent noise and supports reproducible parameter selection for velocity-based filtering.
 
 \subsection{Quality Control (QC): Channel Health}
 
@@ -1158,10 +1221,14 @@ Before any monitoring workflow, a DAS system must detect dead/noisy channels and
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{report_qc_channels.png}
+    \includegraphics[width=0.95\textwidth]{report_qc_channels}
     \caption{Channel-level quality control on raw real-data sample. Left: channel RMS; Right: histogram of RMS values. Thresholds illustrate typical dead/noisy channel detection heuristics.}
     \label{fig:report_qc}
 \end{figure}
+
+\noindent\textbf{Interpretation.} Channel RMS statistics summarize (i) dead channels (near-zero RMS), (ii) saturated or coupling-issue channels (abnormally high RMS), and (iii) normal channels (bulk distribution). This is a prerequisite for any monitoring claim: without channel-health screening, downstream detectors can produce false triggers dominated by a small number of problematic channels.
+
+\noindent\textbf{Operational takeaway.} In a production setting, RMS-based QC runs continuously and feeds a channel mask used by all later steps (detection, denoising, feature extraction). This is an easy win for reliability.
 
 \subsection{Spectral Characterization: Noise vs Event Windows}
 
@@ -1169,10 +1236,14 @@ To validate that preprocessing isolates signal-bearing bands, we compare the pow
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{report_psd_noise_vs_event.png}
+    \includegraphics[width=0.85\textwidth]{report_psd_noise_vs_event}
     \caption{PSD comparison of a noise window versus an event window (median channel). The event window exhibits a broadband energy increase in the band of interest, supporting the choice of preprocessing filter settings.}
     \label{fig:report_psd}
 \end{figure}
+
+\noindent\textbf{Interpretation.} The PSD comparison separates stationary background noise from event-associated energy and highlights which frequency bands are informative for detection. A clean separation suggests that simple bandpass settings are appropriate; strong overlap indicates that more advanced denoising or adaptive filtering may be needed.
+
+\noindent\textbf{Takeaway.} Spectral diagnostics provide evidence-based justification for filter design. They also define the ``band of interest'' for feature extraction and ML models.
 
 \subsection{Optimization-Based Denoising: TV (ADMM) vs SVD}
 
@@ -1180,10 +1251,14 @@ To connect this work to modern \textbf{optimization} practice, we implement a re
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{report_denoising_comparison.png}
+    \includegraphics[width=\textwidth]{report_denoising_comparison}
     \caption{Denoising comparison on a fixed real-data crop: baseline bandpass-filtered data, SVD denoising (rank-$k$ reconstruction), and TV denoising solved by ADMM (computed on a subset of channels for runtime). The comparison emphasizes algorithmic interpretability and reproducibility rather than cherry-picked visual examples.}
     \label{fig:report_denoising}
 \end{figure}
+
+\noindent\textbf{Interpretation (optimization view).} SVD denoising is effective when signal is spatially coherent across channels, but it can oversmooth localized or nonstationary features. TV/ADMM instead encodes a structural prior (piecewise smoothness) and uses proximal splitting to preserve sharp arrivals. Importantly, the ADMM residual/stopping framework provides an explicit convergence handle, which is valuable in automated pipelines.
+
+\noindent\textbf{Takeaway.} This project demonstrates the capability to translate modern optimization ideas (variable splitting + proximal operators) into reproducible geophysical processing components—exactly the type of skill needed to scale DAS monitoring beyond ad-hoc filtering.
 
 \subsection{Detector Robustness: Parameter Sensitivity}
 
@@ -1191,11 +1266,16 @@ A production monitoring system must show that detection performance is stable to
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{report_stalta_sensitivity.png}
+    \includegraphics[width=0.85\textwidth]{report_stalta_sensitivity}
     \caption{STA/LTA sensitivity analysis (downsampled subset for runtime). This figure highlights which parameter regimes are overly sensitive and which are stable, informing practical configuration of an online detector.}
     \label{fig:report_stalta_sens}
 \end{figure}
 
+\noindent\textbf{Interpretation.} STA/LTA behavior is highly dependent on time-scale separation (STA vs LTA) and trigger thresholds. Regions with excessive detections indicate over-sensitivity to noise bursts, while regions with near-zero detections are likely under-sensitive. The stable plateau region provides an empirical operating window.
+
+\noindent\textbf{Takeaway.} Parameter-sensitivity analysis is a practical reliability tool: it transforms ``picked by hand'' detector settings into defensible, reproducible configuration choices.
+
+\newpage
 % ============================================================================
 % 7. DISCUSSION
 % ============================================================================
@@ -1278,6 +1358,7 @@ Several research directions could enhance DAS-based monitoring:
     \item \textbf{4D imaging}: Joint inversion of time-lapse DAS data for velocity model updates
 \end{enumerate}
 
+\newpage
 % ============================================================================
 % 8. CONCLUSIONS
 % ============================================================================
@@ -1302,9 +1383,10 @@ DAS technology represents a transformative capability for subsurface monitoring.
 
 % ============================================================================
 % REFERENCES
-% ============================================================================
+% ==========================================================================
 \newpage
-\bibliographystyle{apalike}
+% The bibliography below is manually maintained using the thebibliography environment.
+% (Do not set a BibTeX style here.)
 
 \begin{thebibliography}{99}
 
@@ -1409,7 +1491,7 @@ Machine learning for microseismic event detection at DAS-instrumented wells.
 \textit{Geophysics}, 86(6), KS179--KS189.
 
 % ============================================================================
-% RECENT REFERENCES (2023-2025)
+% NOTE ON RECENT REFERENCES (2023-2025)
 % ============================================================================
 
 \bibitem{mousavi2024foundation}
@@ -1485,6 +1567,7 @@ Transformer networks for DAS signal processing and event detection.
 % ============================================================================
 % APPENDIX
 % ============================================================================
+
 \newpage
 \appendix
 
@@ -1816,11 +1899,7 @@ Key benefits:
 \subsection{Communication Complexity of Federated Learning}
 \label{app:fl_complexity}
 
-We analyze the communication savings of the Federated Learning approach compared to centralized processing. This analysis is critical for understanding the feasibility of deploying DAS monitoring systems in remote locations with limited network connectivity. We derive closed-form expressions for data transmission requirements under both paradigms and quantify the compression ratio achieved by federated approaches.
-
-\subsubsection{Centralized Processing}
-
-Let $N$ be the number of DAS nodes, $T$ be the duration of monitoring, $f_s$ be the sampling rate, and $C$ be the number of channels per node. The total data volume transmitted to the cloud is:
+We analyze the communication savings of the Federated Learning approach compared to centralized processing. Let $N$ be the number of DAS nodes, $T$ be the duration of monitoring, $f_s$ be the sampling rate, and $C$ be the number of channels per node. The total data volume transmitted to the cloud is:
 \begin{equation}
     V_{central} = N \cdot T \cdot f_s \cdot C \cdot B_{sample}
 \end{equation}
@@ -1834,8 +1913,6 @@ For a typical DAS setup:
 \end{itemize}
 
 Data rate $\approx 400$ MB/s per node, or $40$ GB/s total. This is prohibitive for continuous transmission.
-
-\subsubsection{Federated Learning}
 
 In FL, we only transmit model updates. Let $M$ be the model size (number of parameters) and $K$ be the number of communication rounds.
 \begin{equation}
@@ -1877,6 +1954,8 @@ The augmented Lagrangian is:
 where $\mathbf{u}$ is the dual variable (scaled form).
 
 \subsubsection{Convergence Theorem}
+
+The following convergence guarantees apply under standard convex assumptions with exact subproblem solves. In practice, our implementation uses FFT-based solvers with finite precision and practical stopping rules; we observe stable convergence behavior consistent with the theoretical predictions.
 
 \begin{theorem}[ADMM Convergence for Convex Problems]
 Let $f(\mathbf{x}) = \frac{1}{2}||\mathbf{y} - \mathbf{x}||_2^2$ and $g(\mathbf{z}) = \lambda||\mathbf{z}||_1$. If:
@@ -1950,7 +2029,7 @@ The tolerances are set adaptively based on problem scale:
 
 where $\varepsilon_{abs} = 10^{-4}$ and $\varepsilon_{rel} = 10^{-3}$ are typical choices.
 
-\subsubsection{Practical Convergence Behavior}
+\subsection{Practical Convergence Behavior}
 
 In our DAS denoising application with $n \approx 60{,}000$ samples:
 \begin{itemize}
